@@ -20,7 +20,7 @@ const statusColors: Record<string, string> = {
   rejected: "bg-destructive/20 text-destructive",
 };
 
-const InternDashboard = () => {
+const AffiliateDashboard = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -88,4 +88,4 @@ const InternDashboard = () => {
   );
 };
 
-export default InternDashboard;
+export default AffiliateDashboard;
