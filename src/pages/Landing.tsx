@@ -36,7 +36,7 @@ const Landing = () => (
           Empowering <span className="gradient-text">Tech Talent</span><br />in Africa
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          Join InnoSpace to access world-class tech training, earn commissions as an intern, and build the future of African tech.
+          Join InnoSpace to access world-class tech training, earn commissions as an affiliate, and build the future of African tech.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <Link to="/register">

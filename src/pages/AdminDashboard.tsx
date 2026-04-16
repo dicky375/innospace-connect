@@ -7,16 +7,16 @@ import { toast } from "sonner";
 import { BookOpen, Users, ClipboardCheck, DollarSign, Check, X } from "lucide-react";
 
 const mockPending = [
-  { id: 1, student: "Chinedu Eze", program: "SIWES - Data Science", intern: "Adewale J.", date: "2026-03-22" },
-  { id: 2, student: "Blessing Akin", program: "Frontend Internship", intern: "Chioma N.", date: "2026-03-23" },
-  { id: 3, student: "Samuel Ogu", program: "Backend Internship", intern: "Ibrahim M.", date: "2026-03-24" },
+  { id: 1, student: "Chinedu Eze", program: "SIWES - Data Science", affiliate: "Adewale J.", date: "2026-03-22" },
+  { id: 2, student: "Blessing Akin", program: "Frontend Internship", affiliate: "Chioma N.", date: "2026-03-23" },
+  { id: 3, student: "Samuel Ogu", program: "Backend Internship", affiliate: "Ibrahim M.", date: "2026-03-24" },
 ];
 
 const mockAllRegs = [
-  { id: 1, student: "Amaka Okonkwo", program: "Frontend Internship", intern: "Adewale J.", status: "approved", date: "2026-03-20" },
-  { id: 2, student: "Chinedu Eze", program: "SIWES - Data Science", intern: "Adewale J.", status: "pending", date: "2026-03-22" },
-  { id: 3, student: "Fatima Bello", program: "Backend Internship", intern: "Chioma N.", status: "approved", date: "2026-03-18" },
-  { id: 4, student: "Oluwaseun Ade", program: "SIWES - Software Eng", intern: "Ibrahim M.", status: "rejected", date: "2026-03-15" },
+  { id: 1, student: "Amaka Okonkwo", program: "Frontend Internship", affiliate: "Adewale J.", status: "approved", date: "2026-03-20" },
+  { id: 2, student: "Chinedu Eze", program: "SIWES - Data Science", affiliate: "Adewale J.", status: "pending", date: "2026-03-22" },
+  { id: 3, student: "Fatima Bello", program: "Backend Internship", affiliate: "Chioma N.", status: "approved", date: "2026-03-18" },
+  { id: 4, student: "Oluwaseun Ade", program: "SIWES - Software Eng", affiliate: "Ibrahim M.", status: "rejected", date: "2026-03-15" },
 ];
 
 const statusColors: Record<string, string> = {
@@ -70,7 +70,7 @@ const AdminDashboard = () => {
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="text-left py-3 px-2">Student</th>
                     <th className="text-left py-3 px-2">Program</th>
-                    <th className="text-left py-3 px-2">Intern</th>
+                    <th className="text-left py-3 px-2">Affiliate</th>
                     <th className="text-left py-3 px-2">Date</th>
                     <th className="text-right py-3 px-2">Actions</th>
                   </tr>
@@ -80,7 +80,7 @@ const AdminDashboard = () => {
                     <tr key={r.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                       <td className="py-3 px-2 font-medium">{r.student}</td>
                       <td className="py-3 px-2 text-muted-foreground">{r.program}</td>
-                      <td className="py-3 px-2 text-muted-foreground">{r.intern}</td>
+                      <td className="py-3 px-2 text-muted-foreground">{r.affiliate}</td>
                       <td className="py-3 px-2 text-muted-foreground">{r.date}</td>
                       <td className="py-3 px-2 text-right space-x-2">
                         <Button size="sm" onClick={() => handleApprove(r.id)} className="bg-green-600 hover:bg-green-700 text-primary-foreground h-8 px-3">
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="text-left py-3 px-2">Student</th>
                   <th className="text-left py-3 px-2">Program</th>
-                  <th className="text-left py-3 px-2">Intern</th>
+                  <th className="text-left py-3 px-2">Affiliate</th>
                   <th className="text-left py-3 px-2">Status</th>
                   <th className="text-left py-3 px-2">Date</th>
                 </tr>
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
                   <tr key={r.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                     <td className="py-3 px-2 font-medium">{r.student}</td>
                     <td className="py-3 px-2 text-muted-foreground">{r.program}</td>
-                    <td className="py-3 px-2 text-muted-foreground">{r.intern}</td>
+                    <td className="py-3 px-2 text-muted-foreground">{r.affiliate}</td>
                     <td className="py-3 px-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status]}`}>{r.status}</span>
                     </td>

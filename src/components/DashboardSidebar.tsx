@@ -5,12 +5,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const internLinks = [
-  { to: "/intern", icon: LayoutDashboard, label: "Overview" },
-  { to: "/intern/registrations", icon: ClipboardCheck, label: "My Registrations" },
-  { to: "/intern/leaderboard", icon: Trophy, label: "Leaderboard" },
-  { to: "/intern/wallet", icon: Wallet, label: "Wallet" },
-  { to: "/intern/profile", icon: User, label: "Profile" },
+const affiliateLinks = [
+  { to: "/affiliate", icon: LayoutDashboard, label: "Overview" },
+  { to: "/affiliate/registrations", icon: ClipboardCheck, label: "My Registrations" },
+  { to: "/affiliate/leaderboard", icon: Trophy, label: "Leaderboard" },
+  { to: "/affiliate/wallet", icon: Wallet, label: "Wallet" },
+  { to: "/affiliate/profile", icon: User, label: "Profile" },
 ];
 
 const adminLinks = [
@@ -31,7 +31,7 @@ const DashboardSidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const links = user?.role === "admin" ? adminLinks : user?.role === "intern" ? internLinks : userLinks;
+  const links = user?.role === "admin" ? adminLinks : user?.role === "affiliate" ? affiliateLinks : userLinks;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-40">

@@ -30,7 +30,7 @@ const Register = () => {
       localStorage.setItem("refreshToken", "demo-refresh");
       localStorage.setItem("user", JSON.stringify({ id: "1", name: form.name, email: form.email, role: form.role }));
       toast.success(`Registered as ${form.role} (demo)`);
-      window.location.href = form.role === "admin" ? "/admin" : form.role === "intern" ? "/intern" : "/dashboard";
+      window.location.href = form.role === "admin" ? "/admin" : form.role === "affiliate" ? "/affiliate" : "/dashboard";
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ const Register = () => {
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-glass-border">
-                  <SelectItem value="intern">Intern (Earn commissions)</SelectItem>
+                  <SelectItem value="affiliate">Affiliate (Earn commissions)</SelectItem>
                   <SelectItem value="user">Student / User</SelectItem>
                 </SelectContent>
               </Select>

@@ -24,12 +24,17 @@ const Login = () => {
       // navigate handled by auth state
     } catch {
       // Demo: simulate login
-      const demoRole = email.includes("admin") ? "admin" : email.includes("intern") ? "intern" : "user";
+      const demoRole = email.includes("admin") ? "admin" : email.includes("affiliate") ? "affiliate" : "user";
       localStorage.setItem("accessToken", "demo-token");
       localStorage.setItem("refreshToken", "demo-refresh");
       localStorage.setItem("user", JSON.stringify({ id: "1", name: "Demo User", email, role: demoRole }));
       toast.success(`Logged in as ${demoRole} (demo)`);
-      window.location.href = demoRole === "admin" ? "/admin" : demoRole === "intern" ? "/intern" : "/dashboard";
+      window.location.href = 
+  demoRole === "admin" 
+    ? "/admin/dashboard" 
+    : demoRole === "affiliate" 
+      ? "/affiliate/dashboard" 
+      : "/dashboard";
     } finally {
       setLoading(false);
     }
@@ -69,7 +74,7 @@ const Login = () => {
             Don't have an account? <Link to="/register" className="text-primary hover:underline">Register</Link>
           </p>
           <p className="text-center text-xs text-muted-foreground mt-4">
-            Demo: use admin@, intern@, or user@ in email
+            Demo: use admin@, affiliate@, or user@ in email
           </p>
         </div>
       </div>

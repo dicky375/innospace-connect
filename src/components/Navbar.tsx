@@ -8,7 +8,7 @@ const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const dashboardPath = user?.role === "admin" ? "/admin" : user?.role === "intern" ? "/intern" : "/dashboard";
+  const dashboardPath = user?.role === "admin" ? "/admin" : user?.role === "affiliate" ? "/affiliate" : "/dashboard";
 
   return (
     <nav className="fixed top-0 w-full z-50 glass-strong">
