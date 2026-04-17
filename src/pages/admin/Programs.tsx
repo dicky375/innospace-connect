@@ -1,179 +1,177 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
-import api from "@/lib/api";
+
+interface Program {
+  id: number;
+  title: string;
+  type: "internship" | "siwes" | "bootcamp";
+  duration: string;
+  amount: number;
+  status: "active" | "inactive";
+}
 
 const AdminPrograms = () => {
-  const queryClient = useQueryClient();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    title: "", description: "", monthlyFee: "", durationMonths: "", type: "", category: "",
+  const [programs, setPrograms] = useState<Program[]>([
+    {
+      id: 1,
+      title: "Frontend Development Internship",
+      type: "internship",
+      duration: "3 Months",
+      amount: 45000,
+      status: "active",
+    },
+    {
+      id: 2,
+      title: "SIWES - Data Science",
+      type: "siwes",
+      duration: "6 Months",
+      amount: 35000,
+      status: "active",
+    },
+    {
+      id: 3,
+      title: "Backend Engineering Bootcamp",
+      type: "bootcamp",
+      duration: "4 Months",
+      amount: 60000,
+      status: "inactive",
+    },
+  ]);
+
+  const [showForm, setShowForm] = useState(false);
+  const [newProgram, setNewProgram] = useState({
+    title: "",
+    type: "internship" as const,
+    duration: "",
+    amount: "",
   });
 
-  const { data: programsData, isLoading } = useQuery({
-    queryKey: ["programs"],
-    queryFn: async () => {
-      const { data } = await api.get("/api/programs");
-      return data;
-    },
-  });
+  const handleAddProgram = () => {
+    if (!newProgram.title || !newProgram.duration || !newProgram.amount) {
+      toast.error("Please fill all fields");
+      return;
+    }
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const { data } = await api.post("/api/programs", {
-        ...form,
-        monthlyFee: parseFloat(form.monthlyFee),
-        durationMonths: parseInt(form.durationMonths),
-      });
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Program created!");
-      queryClient.invalidateQueries({ queryKey: ["programs"] });
-      setModalOpen(false);
-      setForm({ title: "", description: "", monthlyFee: "", durationMonths: "", type: "", category: "" });
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to create program");
-    },
-  });
+    setPrograms([
+      ...programs,
+      {
+        id: Date.now(),
+        title: newProgram.title,
+        type: newProgram.type,
+        duration: newProgram.duration,
+        amount: Number(newProgram.amount),
+        status: "active",
+      },
+    ]);
 
-  const deactivateMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/api/programs/${id}`);
-    },
-    onSuccess: () => {
-      toast.success("Program deactivated");
-      queryClient.invalidateQueries({ queryKey: ["programs"] });
-    },
-  });
+    toast.success("Program added successfully");
+    setNewProgram({ title: "", type: "internship", duration: "", amount: "" });
+    setShowForm(false);
+  };
 
-  const programs = programsData?.programs || [];
-  const update = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
+  const toggleStatus = (id: number) => {
+    setPrograms(programs.map(p =>
+      p.id === id ? { ...p, status: p.status === "active" ? "inactive" : "active" } : p
+    ));
+    toast.success("Program status updated");
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Programs</h1>
-            <p className="text-muted-foreground text-sm">Manage internship and SIWES programs</p>
+            <h1 className="text-3xl font-bold">Programs</h1>
+            <p className="text-muted-foreground">Manage all available programs</p>
           </div>
-          <Button onClick={() => setModalOpen(true)} className="gradient-primary text-white hover:opacity-90">
-            <Plus className="h-4 w-4 mr-2" /> New Program
+          <Button onClick={() => setShowForm(!showForm)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Program
           </Button>
         </div>
 
-        <div className="glass p-6 animate-fade-in">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : programs.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No programs yet</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-3 px-2">Title</th>
-                    <th className="text-left py-3 px-2">Type</th>
-                    <th className="text-left py-3 px-2">Monthly Fee</th>
-                    <th className="text-left py-3 px-2">Duration</th>
-                    <th className="text-left py-3 px-2">Status</th>
-                    <th className="text-right py-3 px-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {programs.map((p: any) => (
-                    <tr key={p.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                      <td className="py-3 px-2 font-medium">{p.title}</td>
-                      <td className="py-3 px-2 text-muted-foreground capitalize">{p.type}</td>
-                      <td className="py-3 px-2 text-muted-foreground">₦{Number(p.monthlyFee).toLocaleString()}</td>
-                      <td className="py-3 px-2 text-muted-foreground">{p.durationMonths} months</td>
-                      <td className="py-3 px-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.isActive ? "bg-green-500/20 text-green-400" : "bg-muted/20 text-muted-foreground"}`}>
-                          {p.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-right">
-                        {p.isActive && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deactivateMutation.mutate(p.id)}
-                            className="h-7 px-3 text-xs"
-                          >
-                            Deactivate
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* Add New Program Form */}
+        {showForm && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Add New Program</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                placeholder="Program Title"
+                value={newProgram.title}
+                onChange={(e) => setNewProgram({ ...newProgram, title: e.target.value })}
+              />
+              <select
+                className="border border-input bg-background px-3 py-2 rounded-md"
+                value={newProgram.type}
+                onChange={(e) => setNewProgram({ ...newProgram, type: e.target.value as any })}
+              >
+                <option value="internship">Internship</option>
+                <option value="siwes">SIWES</option>
+                <option value="bootcamp">Bootcamp</option>
+              </select>
+              <Input
+                placeholder="Duration (e.g. 3 Months)"
+                value={newProgram.duration}
+                onChange={(e) => setNewProgram({ ...newProgram, duration: e.target.value })}
+              />
+              <Input
+                type="number"
+                placeholder="Monthly Amount (₦)"
+                value={newProgram.amount}
+                onChange={(e) => setNewProgram({ ...newProgram, amount: e.target.value })}
+              />
+              <Button onClick={handleAddProgram} className="md:col-span-2">
+                Add Program
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Programs List */}
+        <div className="grid gap-4">
+          {programs.map((program) => (
+            <Card key={program.id} className="glass">
+              <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-lg">{program.title}</h3>
+                  <p className="text-muted-foreground">
+                    {program.duration} • ₦{program.amount.toLocaleString()}/month
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Badge variant={program.status === "active" ? "default" : "secondary"}>
+                    {program.status.toUpperCase()}
+                  </Badge>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleStatus(program.id)}
+                  >
+                    {program.status === "active" ? "Deactivate" : "Activate"}
+                  </Button>
+
+                  <Button variant="ghost" size="sm">
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
-
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="glass-strong border-glass-border sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create Program</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="e.g. Software Engineering Internship" className="bg-secondary/50 border-glass-border" />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Input value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="Brief description" className="bg-secondary/50 border-glass-border" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Monthly Fee (₦)</Label>
-                <Input type="number" value={form.monthlyFee} onChange={(e) => update("monthlyFee", e.target.value)} placeholder="45000" className="bg-secondary/50 border-glass-border" />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (months)</Label>
-                <Input type="number" value={form.durationMonths} onChange={(e) => update("durationMonths", e.target.value)} placeholder="3" className="bg-secondary/50 border-glass-border" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => update("type", v)}>
-                <SelectTrigger className="bg-secondary/50 border-glass-border">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-glass-border">
-                  <SelectItem value="internship">Internship</SelectItem>
-                  <SelectItem value="siwes">SIWES</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Input value={form.category} onChange={(e) => update("category", e.target.value)} placeholder="e.g. Technology" className="bg-secondary/50 border-glass-border" />
-            </div>
-            <Button
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending || !form.title || !form.monthlyFee || !form.type}
-              className="w-full gradient-primary text-white hover:opacity-90"
-            >
-              {createMutation.isPending ? "Creating..." : "Create Program"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

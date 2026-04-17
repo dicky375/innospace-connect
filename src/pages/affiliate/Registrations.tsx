@@ -1,107 +1,183 @@
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import api from "@/lib/api";
-
-const statusColors: Record<string, string> = {
-  paid: "bg-green-500/20 text-green-400",
-  approved: "bg-blue-500/20 text-blue-400",
-  pending_approval: "bg-accent/20 text-accent",
-  rejected: "bg-destructive/20 text-destructive",
-  cancelled: "bg-muted/20 text-muted-foreground",
-};
-
-const statusLabels: Record<string, string> = {
-  paid: "Paid",
-  approved: "Approved",
-  pending_approval: "Pending",
-  rejected: "Rejected",
-  cancelled: "Cancelled",
-};
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Search, Eye, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 const AffiliateRegistrations = () => {
-  const [filter, setFilter] = useState("all");
+  const navigate = useNavigate();
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-registrations"],
-    queryFn: async () => {
-      const { data } = await api.get("/api/registrations/my");
-      return data;
+  const registrations = [
+    {
+      id: 1,
+      studentName: "Chinedu Eze",
+      program: "Frontend Internship",
+      email: "chinedu.eze@example.com",
+      date: "2026-04-10",
+      status: "approved",
+      earnings: "₦45,000",
     },
+    {
+      id: 2,
+      studentName: "Blessing Akin",
+      program: "Data Science Bootcamp",
+      email: "blessing.akin@example.com",
+      date: "2026-04-12",
+      status: "pending",
+      earnings: "₦0",
+    },
+    {
+      id: 3,
+      studentName: "Samuel Ogu",
+      program: "Backend Development",
+      email: "samuel.ogu@example.com",
+      date: "2026-04-08",
+      status: "approved",
+      earnings: "₦52,000",
+    },
+    {
+      id: 4,
+      studentName: "Fatima Bello",
+      program: "UI/UX Design",
+      email: "fatima.bello@example.com",
+      date: "2026-04-14",
+      status: "rejected",
+      earnings: "₦0",
+    },
+  ];
+
+  const filteredRegistrations = registrations.filter((reg) => {
+    const matchesSearch =
+      reg.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reg.program.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === "all" || reg.status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
   });
 
-  const registrations = data || [];
-  const filtered = filter === "all" ? registrations : registrations.filter((r: any) => r.status === filter);
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-green-500/20 text-green-400">Approved</Badge>;
+      case "pending":
+        return <Badge variant="secondary">Pending</Badge>;
+      case "rejected":
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">My Registrations</h1>
-          <p className="text-muted-foreground text-sm">All students you have registered</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">My Referrals</h1>
+            <p className="text-muted-foreground">Track and manage all your referred students</p>
+          </div>
+
+          {/* Register New Student Button */}
+          <Button 
+            onClick={() => navigate("/affiliate/register-student")}
+            size="lg"
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-5 w-5" />
+            Register New Student
+          </Button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 flex-wrap">
-          {["all", "pending_approval", "approved", "paid", "rejected"].map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filter === s
-                  ? "gradient-primary text-white"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-              }`}
-            >
-              {s === "all" ? "All" : statusLabels[s]}
-            </button>
-          ))}
-        </div>
-
-        <div className="glass p-6 animate-fade-in">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" /> Filter Referrals
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+              <Input
+                placeholder="Search by name or program..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+              <div className="flex gap-2">
+                {(["all", "pending", "approved", "rejected"] as const).map((status) => (
+                  <Button
+                    key={status}
+                    variant={filterStatus === status ? "default" : "outline"}
+                    onClick={() => setFilterStatus(status)}
+                    className="capitalize"
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </div>
             </div>
-          ) : filtered.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">No registrations found</p>
-          ) : (
+          </CardContent>
+        </Card>
+
+        {/* Registrations Table */}
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle>Referral List ({filteredRegistrations.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-3 px-2">Program</th>
-                    <th className="text-left py-3 px-2">Type</th>
-                    <th className="text-left py-3 px-2">Amount</th>
-                    <th className="text-left py-3 px-2">Status</th>
-                    <th className="text-left py-3 px-2">Date</th>
-                    <th className="text-right py-3 px-2">Commission</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-4 px-4">Student</th>
+                    <th className="text-left py-4 px-4">Program</th>
+                    <th className="text-left py-4 px-4">Date</th>
+                    <th className="text-left py-4 px-4">Status</th>
+                    <th className="text-right py-4 px-4">Earnings</th>
+                    <th className="text-center py-4 px-4">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r: any) => (
-                    <tr key={r.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                      <td className="py-3 px-2 font-medium">{r.Program?.title || "—"}</td>
-                      <td className="py-3 px-2 text-muted-foreground capitalize">{r.Program?.type || "—"}</td>
-                      <td className="py-3 px-2 text-muted-foreground">₦{Number(r.amount).toLocaleString()}</td>
-                      <td className="py-3 px-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status] || ""}`}>
-                          {statusLabels[r.status] || r.status}
-                        </span>
+                  {filteredRegistrations.map((reg) => (
+                    <tr key={reg.id} className="border-b border-border hover:bg-secondary/30">
+                      <td className="py-4 px-4">
+                        <div>
+                          <p className="font-medium">{reg.studentName}</p>
+                          <p className="text-xs text-muted-foreground">{reg.email}</p>
+                        </div>
                       </td>
-                      <td className="py-3 px-2 text-muted-foreground">
-                        {new Date(r.createdAt).toLocaleDateString("en-NG")}
+                      <td className="py-4 px-4 text-muted-foreground">{reg.program}</td>
+                      <td className="py-4 px-4 text-muted-foreground">{reg.date}</td>
+                      <td className="py-4 px-4">{getStatusBadge(reg.status)}</td>
+                      <td className="py-4 px-4 text-right font-semibold text-green-400">
+                        {reg.earnings}
                       </td>
-                      <td className="py-3 px-2 text-right font-medium">
-                        {r.commissionEarned > 0 ? `₦${Number(r.commissionEarned).toLocaleString()}` : "—"}
+                      <td className="py-4 px-4 text-center">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
+              {filteredRegistrations.length === 0 && (
+                <p className="text-center py-10 text-muted-foreground">
+                  No referrals found.
+                </p>
+              )}
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
