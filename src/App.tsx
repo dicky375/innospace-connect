@@ -19,7 +19,7 @@ import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 // Affiliate Pages
 import AffiliateRegistrations from "./pages/affiliate/Registrations";
 import RegisterStudent from "./pages/affiliate/RegisterStudent";
-
+import CommissionCalculator from "./pages/affiliate/CommissionCalculator";
 // Admin Pages
 import AdminApprovals from "./pages/admin/Approvals";
 import AdminRegistrations from "./pages/admin/Registrations";
@@ -72,6 +72,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["affiliate"]}>
                   <RegisterStudent />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/affiliate/commission-calculator"
+              element={
+                <ProtectedRoute allowedRoles={["affiliate"]}>
+                  <CommissionCalculator />
                 </ProtectedRoute>
               }
             />
