@@ -20,18 +20,21 @@ import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateRegistrations from "./pages/affiliate/Registrations";
 import RegisterStudent from "./pages/affiliate/RegisterStudent";
 import CommissionCalculator from "./pages/affiliate/CommissionCalculator";
+import profile from "./pages/affiliate/Profile";  
 // Admin Pages
 import AdminApprovals from "./pages/admin/Approvals";
 import AdminRegistrations from "./pages/admin/Registrations";
 import AdminPayouts from "./pages/admin/Payouts";
 import AdminPrograms from "./pages/admin/Programs";
-import Users from "./pages/admin/Users";
+import AdminUsers from "./pages/admin/Users";   // ← Fixed import name
+import AffiliateProfile from "./pages/affiliate/Profile";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
     },
   },
 });
@@ -51,88 +54,20 @@ const App = () => (
             <Route path="/register" element={<Register />} />
 
             {/* ===================== AFFILIATE ROUTES ===================== */}
-            <Route
-              path="/affiliate"
-              element={
-                <ProtectedRoute allowedRoles={["affiliate"]}>
-                  <AffiliateDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/affiliate/registrations"
-              element={
-                <ProtectedRoute allowedRoles={["affiliate"]}>
-                  <AffiliateRegistrations />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/affiliate/register-student"
-              element={
-                <ProtectedRoute allowedRoles={["affiliate"]}>
-                  <RegisterStudent />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/affiliate/commission-calculator"
-              element={
-                <ProtectedRoute allowedRoles={["affiliate"]}>
-                  <CommissionCalculator />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/affiliate" element={<ProtectedRoute allowedRoles={["affiliate"]}><AffiliateDashboard /></ProtectedRoute>} />
+            <Route path="/affiliate/registrations" element={<ProtectedRoute allowedRoles={["affiliate"]}><AffiliateRegistrations /></ProtectedRoute>} />
+            <Route path="/affiliate/register-student" element={<ProtectedRoute allowedRoles={["affiliate"]}><RegisterStudent /></ProtectedRoute>} />
+            <Route path="/affiliate/profile" element={<ProtectedRoute allowedRoles={["affiliate"]}><AffiliateProfile /></ProtectedRoute>} />
+            {/* Fixed Route - Shorter & Cleaner */}
+            <Route path="/affiliate/calculator" element={<ProtectedRoute allowedRoles={["affiliate"]}><CommissionCalculator /></ProtectedRoute>} />
 
             {/* ===================== ADMIN ROUTES ===================== */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/approvals"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminApprovals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/registrations"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminRegistrations />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/payouts"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminPayouts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/programs"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <AdminPrograms />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <Users />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/approvals" element={<ProtectedRoute allowedRoles={["admin"]}><AdminApprovals /></ProtectedRoute>} />
+            <Route path="/admin/registrations" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRegistrations /></ProtectedRoute>} />
+            <Route path="/admin/payouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPayouts /></ProtectedRoute>} />
+            <Route path="/admin/programs" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPrograms /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
 
             {/* ===================== REDIRECTS ===================== */}
             <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
