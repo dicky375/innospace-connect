@@ -19,16 +19,16 @@ import  AffiliateDashboard  from "./pages/affiliate/AffiliateDashboard";
 import AffiliateRegistrations from "./pages/affiliate/Registrations";
 import RegisterStudent from "./pages/affiliate/RegisterStudent";
 import CommissionCalculator from "./pages/affiliate/CommissionCalculator";
-import profile from "./pages/affiliate/Profile";
 import AffiliateLeaderboard from "./pages/affiliate/Leaderboard";
+import AffiliateProfile from "./pages/affiliate/Profile";
+import AffiliateWallet from "./pages/affiliate/Wallet";
 // Admin Pages
 import AdminApprovals from "./pages/admin/Approvals";
 import AdminRegistrations from "./pages/admin/Registrations";
 import AdminPayouts from "./pages/admin/Payouts";
 import AdminPrograms from "./pages/admin/Programs";
 import AdminUsers from "./pages/admin/Users";   // ← Fixed import name
-import AffiliateProfile from "./pages/affiliate/Profile";
-import AffiliateWallet from "./pages/affiliate/Wallet";
+import AdminSettings from "./pages/admin/Settings"; // ← New Admin Settings Page
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -69,7 +69,7 @@ const App = () => (
             <Route path="/admin/payouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPayouts /></ProtectedRoute>} />
             <Route path="/admin/programs" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPrograms /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
-
+            <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminSettings /></ProtectedRoute>} />
             {/* ===================== REDIRECTS ===================== */}
             <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
             <Route path="/dashboard" element={<Navigate to="/login" replace />} />
