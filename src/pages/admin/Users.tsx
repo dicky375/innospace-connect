@@ -1,167 +1,178 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Users, TrendingUp, Ban } from "lucide-react";
+import { Users, Ban, Loader2, GraduationCap, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const AdminUsers = () => {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"affiliates" | "students">("affiliates");
 
-  // Mock Data
-  const affiliates = [
-    { id: 1, name: "Adewale Johnson", email: "adewale@example.com", students: 18, earnings: 1245000, status: "active", joinDate: "2025-12-01" },
-    { id: 2, name: "Chioma Nwosu", email: "chioma@example.com", students: 12, earnings: 875000, status: "active", joinDate: "2026-01-15" },
-    { id: 3, name: "Ibrahim Musa", email: "ibrahim@example.com", students: 25, earnings: 2150000, status: "active", joinDate: "2025-11-20" },
-    { id: 4, name: "Fatima Bello", email: "fatima@example.com", students: 5, earnings: 320000, status: "suspended", joinDate: "2026-02-10" },
-  ];
+  // 1. Fetch Affiliates from Server 1
+  const { data: affiliates, isLoading: loadingAffiliates } = useQuery({
+    queryKey: ["admin-affiliates"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/users/affiliates");
+      return data;
+    },
+    enabled: activeTab === "affiliates",
+  });
 
-  const students = [
-    { id: 101, name: "Chinedu Eze", email: "chinedu@example.com", program: "Frontend Internship", affiliate: "Adewale Johnson", status: "approved", date: "2026-04-10" },
-    { id: 102, name: "Blessing Akin", email: "blessing@example.com", program: "Data Science", affiliate: "Chioma Nwosu", status: "pending", date: "2026-04-16" },
-  ];
+  // 2. Fetch Students from Server 2
+  const { data: students, isLoading: loadingStudents } = useQuery({
+    queryKey: ["admin-students"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/users/students");
+      return data;
+    },
+    enabled: activeTab === "students",
+  });
 
-  const filteredAffiliates = affiliates.filter(a =>
-    a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 3. Suspend Mutation
+  const suspendMutation = useMutation({
+    mutationFn: (id: number) => api.patch(`/admin/users/${id}/status`, { status: "suspended" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-affiliates"] });
+      toast.error("Account has been suspended");
+    }
+  });
 
-  const handleSuspend = (id: number, name: string) => {
-    toast.error(`User ${name} has been suspended`);
-  };
+  const filteredData = (activeTab === "affiliates" ? affiliates : students)?.filter((user: any) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Users Management</h1>
-            <p className="text-muted-foreground">Manage Affiliates and Students</p>
+            <h1 className="text-3xl font-bold">User Management</h1>
+            <p className="text-muted-foreground">Monitor platform participants and activity</p>
           </div>
-          <Input
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
+          <div className="relative w-full md:w-72">
+            <Input
+              placeholder={`Search ${activeTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-secondary/20"
+            />
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 border-b border-border">
-          <Button
-            variant={activeTab === "affiliates" ? "default" : "ghost"}
+        {/* Custom Tabs */}
+        <div className="flex p-1 bg-secondary/30 rounded-xl w-fit">
+          <button
             onClick={() => setActiveTab("affiliates")}
+            className={`flex items-center px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "affiliates" ? "bg-primary text-white shadow-lg" : "hover:bg-secondary"
+            }`}
           >
             <Users className="mr-2 h-4 w-4" />
-            Affiliates ({affiliates.length})
-          </Button>
-          <Button
-            variant={activeTab === "students" ? "default" : "ghost"}
+            Affiliates
+          </button>
+          <button
             onClick={() => setActiveTab("students")}
+            className={`flex items-center px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "students" ? "bg-primary text-white shadow-lg" : "hover:bg-secondary"
+            }`}
           >
-            Students ({students.length})
-          </Button>
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Students
+          </button>
         </div>
 
-        {/* Affiliates Table */}
-        {activeTab === "affiliates" && (
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle>All Affiliates</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="glass border-white/10">
+          <CardContent className="p-0">
+            {(loadingAffiliates || loadingStudents) ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Loading user directory...</p>
+              </div>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-4 px-4">Affiliate</th>
-                      <th className="text-left py-4 px-4">Students Referred</th>
-                      <th className="text-left py-4 px-4">Total Earnings</th>
-                      <th className="text-left py-4 px-4">Joined</th>
-                      <th className="text-center py-4 px-4">Status</th>
-                      <th className="text-center py-4 px-4">Action</th>
+                  <thead className="bg-secondary/50">
+                    <tr className="text-muted-foreground">
+                      <th className="text-left py-4 px-6 font-semibold">User Details</th>
+                      {activeTab === "affiliates" ? (
+                        <>
+                          <th className="text-left py-4 px-6 font-semibold">Referrals</th>
+                          <th className="text-left py-4 px-6 font-semibold">Total Revenue</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-left py-4 px-6 font-semibold">Program</th>
+                          <th className="text-left py-4 px-6 font-semibold">Referrer</th>
+                        </>
+                      )}
+                      <th className="text-left py-4 px-6 font-semibold">Status</th>
+                      <th className="text-center py-4 px-6 font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAffiliates.map((aff) => (
-                      <tr key={aff.id} className="border-b border-border hover:bg-secondary/30">
-                        <td className="py-4 px-4">
-                          <p className="font-medium">{aff.name}</p>
-                          <p className="text-xs text-muted-foreground">{aff.email}</p>
+                    {filteredData.map((user: any) => (
+                      <tr key={user.id} className="border-b border-white/5 hover:bg-secondary/20 transition-colors">
+                        <td className="py-4 px-6">
+                          <p className="font-bold">{user.name}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
                         </td>
-                        <td className="py-4 px-4 font-semibold">{aff.students}</td>
-                        <td className="py-4 px-4 font-semibold text-green-400">
-                          ₦{aff.earnings.toLocaleString()}
-                        </td>
-                        <td className="py-4 px-4 text-muted-foreground">{aff.joinDate}</td>
-                        <td className="py-4 px-4 text-center">
-                          <Badge variant={aff.status === "active" ? "default" : "destructive"}>
-                            {aff.status.toUpperCase()}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleSuspend(aff.id, aff.name)}
-                          >
-                            <Ban className="h-4 w-4 mr-1" />
-                            Suspend
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                        
+                        {activeTab === "affiliates" ? (
+                          <>
+                            <td className="py-4 px-6 font-medium">{user._count?.students || 0}</td>
+                            <td className="py-4 px-6 font-bold text-green-400">
+                              ₦{(user.totalEarnings || 0).toLocaleString()}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="py-4 px-6 text-muted-foreground">{user.Program?.name}</td>
+                            <td className="py-4 px-6 text-xs">{user.Affiliate?.name || "Direct"}</td>
+                          </>
+                        ) }
 
-        {/* Students Table */}
-        {activeTab === "students" && (
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle>All Registered Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-4 px-4">Student</th>
-                      <th className="text-left py-4 px-4">Program</th>
-                      <th className="text-left py-4 px-4">Affiliate</th>
-                      <th className="text-left py-4 px-4">Date</th>
-                      <th className="text-center py-4 px-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id} className="border-b hover:bg-secondary/30">
-                        <td className="py-4 px-4">
-                          <p className="font-medium">{student.name}</p>
-                          <p className="text-xs text-muted-foreground">{student.email}</p>
-                        </td>
-                        <td className="py-4 px-4">{student.program}</td>
-                        <td className="py-4 px-4 text-muted-foreground">{student.affiliate}</td>
-                        <td className="py-4 px-4 text-muted-foreground">{student.date}</td>
-                        <td className="py-4 px-4 text-center">
-                          <Badge variant={student.status === "approved" ? "default" : "secondary"}>
-                            {student.status}
+                        <td className="py-4 px-6">
+                          <Badge 
+                            variant={user.status === "active" || user.status === "approved" ? "default" : "destructive"}
+                            className="capitalize"
+                          >
+                            {user.status}
                           </Badge>
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          {activeTab === "affiliates" ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                if(confirm(`Suspend ${user.name}?`)) suspendMutation.mutate(user.id);
+                              }}
+                              disabled={user.status === "suspended"}
+                            >
+                              <Ban className="h-4 w-4 mr-1" />
+                              Suspend
+                            </Button>
+                          ) : (
+                            <Button variant="ghost" size="sm">View Docs</Button>
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
