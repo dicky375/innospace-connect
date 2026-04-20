@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
 // Public Pages
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -14,13 +13,14 @@ import NotFound from "./pages/NotFound";
 
 // Dashboards
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
+import  AffiliateDashboard  from "./pages/affiliate/AffiliateDashboard";
 
 // Affiliate Pages
 import AffiliateRegistrations from "./pages/affiliate/Registrations";
 import RegisterStudent from "./pages/affiliate/RegisterStudent";
 import CommissionCalculator from "./pages/affiliate/CommissionCalculator";
-import profile from "./pages/affiliate/Profile";  
+import profile from "./pages/affiliate/Profile";
+import AffiliateLeaderboard from "./pages/affiliate/Leaderboard";
 // Admin Pages
 import AdminApprovals from "./pages/admin/Approvals";
 import AdminRegistrations from "./pages/admin/Registrations";
@@ -28,7 +28,7 @@ import AdminPayouts from "./pages/admin/Payouts";
 import AdminPrograms from "./pages/admin/Programs";
 import AdminUsers from "./pages/admin/Users";   // ← Fixed import name
 import AffiliateProfile from "./pages/affiliate/Profile";
-
+import AffiliateWallet from "./pages/affiliate/Wallet";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -60,7 +60,8 @@ const App = () => (
             <Route path="/affiliate/profile" element={<ProtectedRoute allowedRoles={["affiliate"]}><AffiliateProfile /></ProtectedRoute>} />
             {/* Fixed Route - Shorter & Cleaner */}
             <Route path="/affiliate/calculator" element={<ProtectedRoute allowedRoles={["affiliate"]}><CommissionCalculator /></ProtectedRoute>} />
-
+            <Route path="/affiliate/leaderboard" element={<ProtectedRoute allowedRoles={["affiliate"]}><AffiliateLeaderboard /></ProtectedRoute>} />
+            <Route path="/affiliate/wallet" element={<ProtectedRoute allowedRoles={["affiliate"]}><AffiliateWallet /></ProtectedRoute>} />
             {/* ===================== ADMIN ROUTES ===================== */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/approvals" element={<ProtectedRoute allowedRoles={["admin"]}><AdminApprovals /></ProtectedRoute>} />

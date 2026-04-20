@@ -46,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
+    return data.user;
   };
 
   const register = async (regData: { name: string; email: string; phone: string; password: string; role: string }) => {
@@ -54,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
+    return data.user;
   };
 
   const logout = useCallback(() => {
