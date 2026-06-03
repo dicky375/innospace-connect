@@ -11,13 +11,13 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email.trim() || !password.trim()) {
       toast.error("Please fill all fields");
       return;
@@ -26,22 +26,21 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // We cast to 'any' here to access .name and .role 
-      // ensuring your AuthContext returns the user object
-      const user = (await login(email, password)) as any;
-      
-      if (user) {
-        toast.success(`Welcome back, ${user.name}!`);
-        
-        // Dynamic routing based on Backend Role
-        if (user.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/affiliate");
-        }
+      const user = await login(email, password);
+
+      toast.success(`Welcome back, ${user.name}!`);
+
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/affiliate");
       }
     } catch (error: any) {
-      const message = error.response?.data?.message || "Invalid credentials";
+      // FIX: backend returns { error: "..." } not { message: "..." }
+      const message =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Invalid credentials";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -55,11 +54,11 @@ const Login = () => {
       <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl opacity-30 pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors group"
         >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /> 
+          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to Home
         </Link>
 
@@ -95,12 +94,6 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link 
-                  to="/forgot-password" 
-                  className="text-xs text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
               </div>
               <Input
                 id="password"
@@ -113,14 +106,14 @@ const Login = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={loading} 
+            <Button
+              type="submit"
+              disabled={loading}
               className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/10 transition-all active:scale-[0.98]"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> 
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Authenticating...
                 </span>
               ) : (
@@ -132,7 +125,10 @@ const Login = () => {
           <div className="mt-8 pt-6 border-t border-white/5 text-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/register" className="text-primary font-medium hover:underline">
+              <Link
+                to="/register"
+                className="text-primary font-medium hover:underline"
+              >
                 Register as Affiliate
               </Link>
             </p>

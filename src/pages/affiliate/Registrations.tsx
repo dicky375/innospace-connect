@@ -1,68 +1,70 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api"; // Your central axios instance
+import api, { REGISTRATIONS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Eye, UserPlus, Loader2 } from "lucide-react";
-import { format } from "date-fns"; // Recommended: npm install date-fns
+import { Search, UserPlus, Loader2 } from "lucide-react";
+
+const statusColors: Record<string, string> = {
+  paid: "bg-green-500/20 text-green-400",
+  approved: "bg-blue-500/20 text-blue-400",
+  pending_approval: "bg-yellow-500/20 text-yellow-400",
+  rejected: "bg-destructive/20 text-destructive",
+  cancelled: "bg-muted/20 text-muted-foreground",
+};
+
+const statusLabels: Record<string, string> = {
+  paid: "Paid",
+  approved: "Approved",
+  pending_approval: "Pending",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+};
 
 const AffiliateRegistrations = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [filterStatus, setFilterStatus] = useState("all");
 
-  // 1. Fetch real referrals from Server 2 (Registration Service)
-  const { data: registrations, isLoading } = useQuery({
-    queryKey: ["my-registrations", filterStatus],
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-registrations"],
     queryFn: async () => {
-      // We pass the status as a query param to let the backend handle filtering
-      const statusParam = filterStatus !== "all" ? `?status=${filterStatus}` : "";
-      const { data } = await api.get(`/registrations/me${statusParam}`);
+      const { data } = await api.get(`${REGISTRATIONS}/my`);
       return data;
     },
   });
 
-  // 2. Client-side search (for better UX)
-  const filteredRegistrations = registrations?.filter((reg: any) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      reg.studentName.toLowerCase().includes(searchLower) ||
-      reg.Program?.name.toLowerCase().includes(searchLower)
-    );
-  }) || [];
+  const registrations = Array.isArray(data) ? data : [];
 
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "approved":
-        return <Badge className="bg-green-500/20 text-green-400">Approved</Badge>;
-      case "pending":
-        return <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400">Pending</Badge>;
-      case "rejected":
-        return <Badge variant="destructive">Rejected</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
+  const filtered = registrations.filter((reg: any) => {
+    const matchStatus =
+      filterStatus === "all" || reg.status === filterStatus;
+    const matchSearch =
+      !searchTerm ||
+      reg.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reg.Program?.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchStatus && matchSearch;
+  });
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">My Referrals</h1>
-            <p className="text-muted-foreground">Track and manage all your referred students</p>
+            <h1 className="text-3xl font-bold">My Registrations</h1>
+            <p className="text-muted-foreground">
+              Track all your referred students
+            </p>
           </div>
-
-          <Button 
+          <Button
             onClick={() => navigate("/affiliate/register-student")}
             size="lg"
-            className="flex items-center gap-2"
           >
-            <UserPlus className="h-5 w-5" />
+            <UserPlus className="h-5 w-5 mr-2" />
             Register New Student
           </Button>
         </div>
@@ -71,40 +73,42 @@ const AffiliateRegistrations = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Search className="h-5 w-5 text-primary" /> Filter Referrals
+              <Search className="h-5 w-5 text-primary" /> Filter
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:row gap-4">
+            <div className="flex flex-col gap-4">
               <Input
                 placeholder="Search by student name or program..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
               />
               <div className="flex flex-wrap gap-2">
-                {(["all", "pending", "approved", "rejected"] as const).map((status) => (
-                  <Button
-                    key={status}
-                    variant={filterStatus === status ? "default" : "outline"}
-                    onClick={() => setFilterStatus(status)}
-                    className="capitalize px-6"
-                  >
-                    {status}
-                  </Button>
-                ))}
+                {["all", "pending_approval", "approved", "paid", "rejected", "cancelled"].map(
+                  (status) => (
+                    <Button
+                      key={status}
+                      variant={filterStatus === status ? "default" : "outline"}
+                      onClick={() => setFilterStatus(status)}
+                      className="capitalize px-4"
+                      size="sm"
+                    >
+                      {status === "all" ? "All" : statusLabels[status]}
+                    </Button>
+                  )
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Registrations Table */}
+        {/* Table */}
         <Card className="glass overflow-hidden">
-          <CardContent className="p-0"> {/* Remove padding for full-bleed table */}
+          <CardContent className="p-0">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-muted-foreground">Fetching your referrals...</p>
+                <p className="text-muted-foreground">Loading registrations...</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -113,46 +117,60 @@ const AffiliateRegistrations = () => {
                     <tr>
                       <th className="text-left py-4 px-6 font-semibold">Student</th>
                       <th className="text-left py-4 px-6 font-semibold">Program</th>
+                      <th className="text-left py-4 px-6 font-semibold">Reg No.</th>
                       <th className="text-left py-4 px-6 font-semibold">Date</th>
                       <th className="text-left py-4 px-6 font-semibold">Status</th>
-                      <th className="text-right py-4 px-6 font-semibold">Earnings</th>
-                      <th className="text-center py-4 px-6 font-semibold">Action</th>
+                      <th className="text-right py-4 px-6 font-semibold">Commission</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRegistrations.map((reg: any) => (
-                      <tr key={reg.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
-                        <td className="py-4 px-6">
-                          <div>
-                            <p className="font-medium">{reg.studentName}</p>
-                            <p className="text-xs text-muted-foreground">{reg.email}</p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-muted-foreground">
-                          {reg.Program?.name || "N/A"}
-                        </td>
-                        <td className="py-4 px-6 text-muted-foreground">
-                          {format(new Date(reg.createdAt), "MMM dd, yyyy")}
-                        </td>
-                        <td className="py-4 px-6">{getStatusBadge(reg.status)}</td>
-                        <td className="py-4 px-6 text-right font-bold text-green-400">
-                          ₦{(reg.commission || 0).toLocaleString()}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <Button variant="ghost" size="icon" title="View Details">
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                    {filtered.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="text-center py-20 text-muted-foreground"
+                        >
+                          No registrations found
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filtered.map((reg: any) => (
+                        <tr
+                          key={reg.id}
+                          className="border-b border-border/50 hover:bg-secondary/20 transition-colors"
+                        >
+                          <td className="py-4 px-6">
+                            <p className="font-medium">{reg.studentName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {reg.studentEmail}
+                            </p>
+                          </td>
+                          <td className="py-4 px-6 text-muted-foreground">
+                            {reg.Program?.title || "—"}
+                          </td>
+                          <td className="py-4 px-6 text-muted-foreground">
+                            {reg.regNumber}
+                          </td>
+                          <td className="py-4 px-6 text-muted-foreground">
+                            {new Date(reg.createdAt).toLocaleDateString("en-NG")}
+                          </td>
+                          <td className="py-4 px-6">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                statusColors[reg.status] || ""
+                              }`}
+                            >
+                              {statusLabels[reg.status] || reg.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right font-bold text-green-400">
+                            ₦{parseFloat(reg.commissionEarned || 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
-
-                {filteredRegistrations.length === 0 && (
-                  <div className="text-center py-20">
-                    <p className="text-muted-foreground text-lg">No referrals found matching your criteria.</p>
-                  </div>
-                )}
               </div>
             )}
           </CardContent>

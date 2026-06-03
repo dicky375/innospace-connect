@@ -5,39 +5,43 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { REGISTRATIONS } from "@/lib/api";
 
 const AdminApprovals = () => {
   const queryClient = useQueryClient();
 
-  // Fetch pending registrations
-  const { data: pending = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["pending-registrations"],
     queryFn: async () => {
-      const { data } = await api.get("/api/registrations/pending");
+      const { data } = await api.get(`${REGISTRATIONS}/pending`);
       return data;
     },
   });
 
-  // Approve Mutation
+  const pending = data?.registrations || [];
+
   const approveMutation = useMutation({
-    mutationFn: async (id: string) => api.patch(`/api/registrations/${id}/approve`),
+    mutationFn: async (id: string) =>
+      api.patch(`${REGISTRATIONS}/${id}/approve`),
     onSuccess: () => {
-      toast.success("✅ Registration approved! Commission marked for payout.");
+      toast.success("Registration approved! Commission assigned.");
       queryClient.invalidateQueries({ queryKey: ["pending-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.error || "Failed to approve registration");
     },
   });
 
-  // Reject Mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason?: string }) =>
-      api.patch(`/api/registrations/${id}/reject`, { reason: reason || "Not approved" }),
+      api.patch(`${REGISTRATIONS}/${id}/reject`, {
+        reason: reason || "Not approved",
+      }),
     onSuccess: () => {
-      toast.success("❌ Registration rejected");
+      toast.success("Registration rejected");
       queryClient.invalidateQueries({ queryKey: ["pending-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.error || "Failed to reject registration");
@@ -67,7 +71,9 @@ const AdminApprovals = () => {
           ) : pending.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-2xl mb-2">🎉 No pending approvals</p>
-              <p className="text-muted-foreground">All registrations have been reviewed</p>
+              <p className="text-muted-foreground">
+                All registrations have been reviewed
+              </p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -77,56 +83,62 @@ const AdminApprovals = () => {
                   className="border border-border rounded-xl p-6 hover:border-primary/50 transition-all"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                    {/* Student Info */}
                     <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Student</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        Student
+                      </p>
                       <p className="font-semibold text-lg">{r.studentName}</p>
-                      <p className="text-sm text-muted-foreground">{r.studentEmail}</p>
-                      <p className="text-sm text-muted-foreground">{r.studentPhone}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {r.studentEmail}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {r.studentPhone}
+                      </p>
                     </div>
 
-                    {/* Academic Info */}
                     <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Academic Details</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        Academic Details
+                      </p>
                       <p className="font-medium">{r.regNumber}</p>
                       <p>{r.department}</p>
                       <p className="text-sm text-muted-foreground">{r.course}</p>
                     </div>
 
-                    {/* Program & Affiliate */}
                     <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Program</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        Program
+                      </p>
                       <p className="font-medium">{r.Program?.title || "—"}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{r.Program?.type}</p>
-
-                      <div className="mt-4">
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Affiliate</p>
-                        <p className="flex items-center gap-2">
-                          <User className="h-4 w-4" /> {r.Affiliate?.name || "Unknown"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Commission & Supervisor */}
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Commission</p>
-                      <p className="text-2xl font-bold text-green-400">
-                        ₦{Number(r.commission || 35000).toLocaleString()}
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {r.Program?.type}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">HOD</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        Commission (10%)
+                      </p>
+                      <p className="text-2xl font-bold text-green-400">
+                        ₦{(Number(r.amount) * 0.1).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        HOD
+                      </p>
                       <p>{r.hodName}</p>
                     </div>
 
                     <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Supervisor</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        Supervisor
+                      </p>
                       <p>{r.supervisorName}</p>
                     </div>
                   </div>
 
-                  {/* SIWES Form */}
                   {r.siwesFormPath && (
                     <div className="mt-4 pt-4 border-t border-border">
                       <a
@@ -141,7 +153,6 @@ const AdminApprovals = () => {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
                   <div className="flex gap-3 mt-6">
                     <Button
                       onClick={() => approveMutation.mutate(r.id)}
@@ -149,7 +160,7 @@ const AdminApprovals = () => {
                       className="bg-green-600 hover:bg-green-700 flex-1 md:flex-none"
                     >
                       <Check className="mr-2 h-4 w-4" />
-                      Approve & Release Commission
+                      Approve & Assign Commission
                     </Button>
 
                     <Button

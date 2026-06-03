@@ -1,20 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api from "@/lib/api";
-import { useNavigate } from "react-router-dom";
+import api, { AUTH } from "@/lib/api";
 
 interface User {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  role: "affiliate" | "admin" | "user";
+  role: "affiliate" | "admin";
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: { name: string; email: string; phone: string; password: string; role: string }) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }) => Promise<User>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -27,10 +31,13 @@ export const useAuth = () => {
   return ctx;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore session from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
@@ -40,8 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { data } = await api.post("/api/auth/login", { email, password });
+  const login = async (email: string, password: string): Promise<User> => {
+    const { data } = await api.post(`${AUTH}/login`, { email, password });
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("user", JSON.stringify(data.user));
@@ -49,8 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return data.user;
   };
 
-  const register = async (regData: { name: string; email: string; phone: string; password: string; role: string }) => {
-    const { data } = await api.post("/api/auth/register", regData);
+  const register = async (regData: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }): Promise<User> => {
+    const { data } = await api.post(`${AUTH}/register`, regData);
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("user", JSON.stringify(data.user));
@@ -59,7 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = useCallback(() => {
-    api.post("/api/auth/logout").catch(() => {});
+    const refreshToken = localStorage.getItem("refreshToken");
+    api.post(`${AUTH}/logout`, { refreshToken }).catch(() => {});
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
@@ -67,7 +80,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

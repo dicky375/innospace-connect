@@ -1,72 +1,97 @@
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import api, { COMMISSIONS } from "@/lib/api";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Medal, Loader2 } from "lucide-react";
 
-interface LeaderboardUser {
-  id: string;
-  name: string;
-  totalEarnings: number;
-}
-
-const LeaderboardWidget = () => {
-  // 1. Fetch Top 5 Affiliates from the Backend
-  const { data: users, isLoading } = useQuery({
+const AffiliateLeaderboard = () => {
+  const { data, isLoading } = useQuery({
     queryKey: ["leaderboard"],
     queryFn: async () => {
-      // Hits port 3000 -> Routes to appropriate service (likely Payments or Registrations)
-      const { data } = await api.get("/affiliates/leaderboard");
+      const { data } = await api.get(`${COMMISSIONS}/leaderboard`);
       return data;
     },
-    // Refresh every 5 minutes since this doesn't change every second
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const rankIcon = (index: number) => {
+    if (index === 0) return <Medal className="h-5 w-5 text-yellow-500" />;
+    if (index === 1) return <Medal className="h-5 w-5 text-slate-400" />;
+    if (index === 2) return <Medal className="h-5 w-5 text-amber-600" />;
+    return <span className="text-sm font-mono text-muted-foreground">{index + 1}</span>;
+  };
 
   return (
-    <div className="rounded-xl border bg-card/50 backdrop-blur-sm overflow-hidden">
-      <div className="p-4 border-b bg-primary/5 flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-yellow-500" />
-        <h2 className="font-bold">Top Earners</h2>
-      </div>
-      
-      <div className="p-2">
-        {users?.map((user: LeaderboardUser, index: number) => (
-          <div 
-            key={user.id} 
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              {/* Rank Icons for Top 3 */}
-              <div className="w-6 text-center font-mono text-sm">
-                {index === 0 ? <Medal className="h-4 w-4 text-yellow-500 mx-auto" /> : 
-                 index === 1 ? <Medal className="h-4 w-4 text-slate-400 mx-auto" /> :
-                 index === 2 ? <Medal className="h-4 w-4 text-amber-600 mx-auto" /> : 
-                 index + 1}
-              </div>
-              <span className="font-medium text-sm">{user.name}</span>
+    <DashboardLayout>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="bg-yellow-500/10 p-4 rounded-2xl">
+              <Trophy className="h-12 w-12 text-yellow-500" />
             </div>
-            
-            <span className="font-bold text-sm text-green-500">
-              ₦{user.totalEarnings.toLocaleString()}
-            </span>
           </div>
-        ))}
-
-        {(!users || users.length === 0) && (
-          <p className="text-center py-4 text-xs text-muted-foreground">
-            No data available yet.
+          <h1 className="text-4xl font-bold">Leaderboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Top earning affiliates this period
           </p>
-        )}
+        </div>
+
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Top Earners
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : !data || data.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">
+                No data available yet. Start registering students to appear here!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {data.map((entry: any, index: number) => (
+                  <div
+                    key={entry.affiliateId}
+                    className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
+                      index === 0
+                        ? "bg-yellow-500/10 border border-yellow-500/20"
+                        : index === 1
+                        ? "bg-slate-500/10 border border-slate-500/20"
+                        : index === 2
+                        ? "bg-amber-600/10 border border-amber-600/20"
+                        : "bg-secondary/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 flex justify-center">
+                        {rankIcon(index)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          Affiliate #{entry.affiliateId.slice(0, 8)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Rank #{entry.rank}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="font-bold text-green-400">
+                      ₦{parseFloat(entry.totalCommission).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
-export default LeaderboardWidget;
+export default AffiliateLeaderboard;
