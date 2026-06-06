@@ -16,7 +16,7 @@ const AdminUsers = () => {
   const { data: affiliates, isLoading } = useQuery({
     queryKey: ["admin-affiliates"],
     queryFn: async () => {
-      const { data } = await api.get(USERS);
+      const { data } = await api.get("auth/api/auth");
       // Filter to only affiliates
       return data.filter((u: any) => u.role === "affiliate");
     },
