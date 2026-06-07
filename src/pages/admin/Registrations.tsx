@@ -45,7 +45,7 @@ const AdminRegistrations = () => {
   });
 
  const getFileUrl = (r: any) =>
-  `http://localhost:3000/reg/api/registrations/file/${r.id}`;
+  `http://localhost:3000/reg/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`;
  
   return (
     <DashboardLayout>
