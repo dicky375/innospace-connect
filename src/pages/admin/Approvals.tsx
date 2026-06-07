@@ -142,7 +142,7 @@ const AdminApprovals = () => {
                   {r.siwesFormPath && (
                     <div className="mt-4 pt-4 border-t border-border">
                       <a
-                        href={`http://localhost:3002/uploads/${r.siwesFormPath}`}
+                        href={r.siwesFormPath}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 text-primary hover:underline"
