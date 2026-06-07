@@ -217,7 +217,7 @@ const RegisterStudent = () => {
 
                 {/* HOD */}
                 <div className="space-y-2">
-                  <Label>HOD Name *</Label>
+                  <Label>HOD Name *(Optional)</Label>
                   <Input
                     name="hodName"
                     placeholder="e.g. Dr. Adeyemi"
@@ -229,7 +229,7 @@ const RegisterStudent = () => {
 
                 {/* Supervisor */}
                 <div className="space-y-2">
-                  <Label>Supervisor Name *</Label>
+                  <Label>Supervisor Name *(Optional)</Label>
                   <Input
                     name="supervisorName"
                     placeholder="e.g. Engr. Bello"
