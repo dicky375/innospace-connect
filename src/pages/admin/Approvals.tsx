@@ -139,11 +139,10 @@ const AdminApprovals = () => {
                     </div>
                   </div>
 
-                  {r.siwesFormPath && (
+                  {r.siwesFormName && (
                     <div className="mt-4 pt-4 border-t border-border">
                       <a
-                        href={r.siwesFormPath}
-                        target="_blank"
+                        href={`http://localhost:3000/reg/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`}
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 text-primary hover:underline"
                       >

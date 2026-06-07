@@ -91,8 +91,7 @@ const RegisterStudent = () => {
     if (!formData.regNumber) return toast.error("Registration number is required");
     if (!formData.course) return toast.error("Course is required");
     if (!formData.department) return toast.error("Department is required");
-    if (!formData.hodName) return toast.error("HOD name is required");
-    if (!formData.supervisorName) return toast.error("Supervisor name is required");
+    
 
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => data.append(key, value));
@@ -223,7 +222,7 @@ const RegisterStudent = () => {
                     placeholder="e.g. Dr. Adeyemi"
                     value={formData.hodName}
                     onChange={handleInputChange}
-                    required
+                   
                   />
                 </div>
 
@@ -235,7 +234,7 @@ const RegisterStudent = () => {
                     placeholder="e.g. Engr. Bello"
                     value={formData.supervisorName}
                     onChange={handleInputChange}
-                    required
+                    
                   />
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
+import { FileText } from "lucide-react";
 import api, { REGISTRATIONS } from "@/lib/api";
 
 const statusColors: Record<string, string> = {
@@ -34,6 +35,7 @@ const AdminRegistrations = () => {
   });
 
   const registrations = data?.registrations || [];
+
   const filtered = registrations.filter((r: any) => {
     const matchSearch =
       !search ||
@@ -42,16 +44,18 @@ const AdminRegistrations = () => {
     return matchSearch;
   });
 
+ const getFileUrl = (r: any) =>
+  `http://localhost:3000/reg/api/registrations/file/${r.id}`;
+ 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">All Registrations</h1>
-          <p className="text-muted-foreground text-sm">
-            Complete registration history
-          </p>
+          <p className="text-muted-foreground text-sm">Complete registration history</p>
         </div>
 
+        {/* Filters */}
         <div className="flex gap-3 flex-wrap items-center">
           <Input
             placeholder="Search by student or program..."
@@ -60,24 +64,23 @@ const AdminRegistrations = () => {
             className="max-w-xs bg-secondary/50 border-glass-border"
           />
           <div className="flex gap-2 flex-wrap">
-            {["all", "pending_approval", "approved", "paid", "rejected"].map(
-              (s) => (
-                <button
-                  key={s}
-                  onClick={() => setFilter(s)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    filter === s
-                      ? "gradient-primary text-white"
-                      : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                  }`}
-                >
-                  {s === "all" ? "All" : statusLabels[s]}
-                </button>
-              )
-            )}
+            {["all", "pending_approval", "approved", "paid", "rejected"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  filter === s
+                    ? "gradient-primary text-white"
+                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                {s === "all" ? "All" : statusLabels[s]}
+              </button>
+            ))}
           </div>
         </div>
 
+        {/* Table */}
         <div className="glass p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -99,6 +102,7 @@ const AdminRegistrations = () => {
                     <th className="text-left py-3 px-2">Commission</th>
                     <th className="text-left py-3 px-2">Status</th>
                     <th className="text-left py-3 px-2">Date</th>
+                    <th className="text-left py-3 px-2">File</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -109,9 +113,7 @@ const AdminRegistrations = () => {
                     >
                       <td className="py-3 px-2 font-medium">
                         <p>{r.studentName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {r.regNumber}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{r.regNumber}</p>
                       </td>
                       <td className="py-3 px-2 text-muted-foreground">
                         {r.Program?.title || "—"}
@@ -136,6 +138,21 @@ const AdminRegistrations = () => {
                       </td>
                       <td className="py-3 px-2 text-muted-foreground">
                         {new Date(r.createdAt).toLocaleDateString("en-NG")}
+                      </td>
+                      <td className="py-3 px-2">
+                        {r.siwesFormPath ? (
+                          <a
+                            href={getFileUrl(r.siwesFormPath)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+                          >
+                            <FileText className="h-3 w-3" />
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
