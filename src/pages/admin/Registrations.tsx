@@ -142,7 +142,7 @@ const AdminRegistrations = () => {
                       <td className="py-3 px-2">
                         {r.siwesFormPath ? (
                           <a
-                            href={getFileUrl(r.siwesFormPath)}
+                            href={getFileUrl(r)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
