@@ -1,20 +1,23 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// ── Service URLs ───────────────────────────────────────────────
+const AUTH_URL = import.meta.env.VITE_AUTH_URL || "http://localhost:3001";
+const REG_URL = import.meta.env.VITE_REG_URL || "http://localhost:3002";
+const PAY_URL = import.meta.env.VITE_PAY_URL || "http://localhost:3003";
 
 // ── Service URL constants ──────────────────────────────────────
-export const AUTH = "/auth/api/auth";
-export const USERS = "/auth/api/users";
-export const PROGRAMS = "/reg/api/programs";
-export const REGISTRATIONS = "/reg/api/registrations";
-export const STATS = "/reg/api/stats";
-export const PAYMENTS = "/pay/api/payments";
-export const COMMISSIONS = "/pay/api/commissions";
-export const PAYOUTS = "/pay/api/payouts";
+export const AUTH = `${AUTH_URL}/api/auth`;
+export const USERS = `${AUTH_URL}/api/users`;
+export const PROGRAMS = `${REG_URL}/api/programs`;
+export const REGISTRATIONS = `${REG_URL}/api/registrations`;
+export const STATS = `${REG_URL}/api/stats`;
+export const PAYMENTS = `${PAY_URL}/api/payments`;
+export const COMMISSIONS = `${PAY_URL}/api/commissions`;
+export const PAYOUTS = `${PAY_URL}/api/payouts`;
+export const CONFIG = `${REG_URL}/api/config`;
 
 // ── Axios instance ─────────────────────────────────────────────
 const api = axios.create({
-  baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -65,7 +68,7 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        const { data } = await axios.post(`${API_BASE}${AUTH}/refresh`, {
+        const { data } = await axios.post(`${AUTH}/refresh`, {
           refreshToken,
         });
         localStorage.setItem("accessToken", data.accessToken);
