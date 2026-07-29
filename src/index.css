@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* ===== LIGHT MODE (default) ===== */
+  /* ===== LIGHT MODE (default when no .dark class) ===== */
   :root {
     --background: 0 0% 100%;
     --foreground: 240 33% 8%;
@@ -46,13 +46,13 @@
     --sidebar-border: 240 10% 88%;
     --sidebar-ring: 263 70% 54%;
 
-    --glass-bg: 0 0% 100%;
+    --glass-bg: 255 255 255 / 0.6;
     --glass-border: 240 10% 88%;
     --glow-primary: 263 70% 54%;
     --glow-accent: 37 90% 55%;
   }
 
-  /* ===== DARK MODE ===== */
+  /* ===== DARK MODE (applied when .dark class is on html) ===== */
   .dark {
     --background: 240 33% 8%;
     --foreground: 0 0% 100%;
@@ -91,7 +91,7 @@
     --sidebar-border: 240 20% 22%;
     --sidebar-ring: 263 70% 54%;
 
-    --glass-bg: 240 29% 14%;
+    --glass-bg: 240 29% 14 / 0.6;
     --glass-border: 240 20% 28%;
     --glow-primary: 263 70% 54%;
     --glow-accent: 37 90% 55%;
