@@ -46,6 +46,16 @@ const DashboardSidebar = () => {
         </Link>
       </div>
 
+      {/* Debug: Check if this appears */}
+<div className="px-3 py-2 text-xs text-green-400 bg-green-900/30 rounded-lg mx-3 mb-2">
+  🔍 Sidebar is rendering
+</div>
+      
+<div className="flex items-center justify-between px-3 py-2 rounded-lg bg-sidebar-accent/50">
+  <span className="text-sm text-sidebar-foreground/70">Theme</span>
+  <DarkModeToggle />
+</div>
+
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {links.map((link) => {

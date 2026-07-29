@@ -3,6 +3,8 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DarkModeToggle = () => {
+  console.log('[DarkModeToggle] Component is rendering!'); // ✅ Debug log
+
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("theme");
     if (stored) return stored === "dark";
@@ -10,6 +12,7 @@ const DarkModeToggle = () => {
   });
 
   useEffect(() => {
+    console.log('[DarkModeToggle] isDark changed to:', isDark); // ✅ Debug log
     if (isDark) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -23,7 +26,10 @@ const DarkModeToggle = () => {
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => setIsDark(!isDark)}
+      onClick={() => {
+        console.log('[DarkModeToggle] Button clicked!'); // ✅ Debug log
+        setIsDark(!isDark);
+      }}
       className="rounded-full h-8 w-8 p-0"
     >
       {isDark ? (
