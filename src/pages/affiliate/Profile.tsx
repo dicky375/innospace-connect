@@ -22,57 +22,74 @@ const AffiliateProfile = () => {
     accountName: user?.accountName || "",
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (payload: typeof form) => {
-      // ✅ Only send fields that have changed
-      const changes: any = {};
-      if (payload.name !== user?.name) changes.name = payload.name;
-      if (payload.phone !== user?.phone) changes.phone = payload.phone;
-      if (payload.bankName !== user?.bankName) changes.bankName = payload.bankName;
-      if (payload.accountNumber !== user?.accountNumber) changes.accountNumber = payload.accountNumber;
-      if (payload.accountName !== user?.accountName) changes.accountName = payload.accountName;
-      
-      console.log('[FRONTEND] Sending changes:', changes);
-      
-      const { data } = await api.patch(`${USERS}/profile`, changes);
-      return data;
-    },
-    onSuccess: (data) => {
-      toast.success("Profile updated successfully");
-      
-      // ✅ Update the user in the AuthContext
-      if (data?.user) {
-        // Update the user in localStorage and context
-        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        const updatedUser = { ...storedUser, ...data.user };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        // Force a refresh of the user data
-        window.dispatchEvent(new Event('storage'));
-      }
-      
-      // ✅ Invalidate the profile query
-      queryClient.invalidateQueries({ queryKey: ["affiliate-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-    },
-    onError: (err: any) => {
-      console.error('[FRONTEND] Update error:', err.response?.data);
-      toast.error(err?.response?.data?.error || "Failed to update profile");
-    },
-  });
+const updateMutation = useMutation({
+  mutationFn: async (payload: typeof form) => {
+    // ✅ Only send fields that have changed AND have a value
+    const changes: any = {};
+    
+    // Check each field individually
+    if (payload.name !== user?.name && payload.name.trim() !== '') {
+      changes.name = payload.name.trim();
+    }
+    if (payload.phone !== user?.phone && payload.phone.trim() !== '') {
+      changes.phone = payload.phone.trim();
+    }
+    if (payload.bankName !== user?.bankName && payload.bankName.trim() !== '') {
+      changes.bankName = payload.bankName.trim();
+    }
+    if (payload.accountNumber !== user?.accountNumber && payload.accountNumber.trim() !== '') {
+      changes.accountNumber = payload.accountNumber.trim();
+    }
+    if (payload.accountName !== user?.accountName && payload.accountName.trim() !== '') {
+      changes.accountName = payload.accountName.trim();
+    }
+    
+    // If no changes, don't send the request
+    if (Object.keys(changes).length === 0) {
+      toast.info("No changes to save");
+      return;
+    }
+    
+    console.log('[FRONTEND] Sending changes:', changes);
+    
+    const { data } = await api.patch(`${USERS}/profile`, changes);
+    return data;
+  },
+  onSuccess: (data) => {
+    toast.success("Profile updated successfully");
+    
+    // Update the user in localStorage and context
+    if (data?.user) {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const updatedUser = { ...storedUser, ...data.user };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // Force a refresh
+      window.dispatchEvent(new Event('storage'));
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["affiliate-profile"] });
+    queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+  },
+  onError: (err: any) => {
+    console.error('[FRONTEND] Update error:', err.response?.data);
+    toast.error(err?.response?.data?.error || "Failed to update profile");
+  },
+});
 
   const update = (key: string, val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
   // ✅ Check if any field has changed
-  const hasChanges = () => {
-    return (
-      form.name !== user?.name ||
-      form.phone !== user?.phone ||
-      form.bankName !== user?.bankName ||
-      form.accountNumber !== user?.accountNumber ||
-      form.accountName !== user?.accountName
-    );
-  };
+ const hasChanges = () => {
+  // Check if any field has changed AND has a value
+  const nameChanged = form.name !== user?.name && form.name.trim() !== '';
+  const phoneChanged = form.phone !== user?.phone && form.phone.trim() !== '';
+  const bankNameChanged = form.bankName !== user?.bankName && form.bankName.trim() !== '';
+  const accountNumberChanged = form.accountNumber !== user?.accountNumber && form.accountNumber.trim() !== '';
+  const accountNameChanged = form.accountName !== user?.accountName && form.accountName.trim() !== '';
+  
+  return nameChanged || phoneChanged || bankNameChanged || accountNumberChanged || accountNameChanged;
+};
 
   return (
     <DashboardLayout>
