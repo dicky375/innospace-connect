@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api, { AUTH } from "../lib/api";  // ← Updated import path
+import api, { AUTH } from "@/lib/api";
 
 interface User {
   id: string;
@@ -7,6 +7,9 @@ interface User {
   email: string;
   phone?: string;
   role: "affiliate" | "admin";
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 interface AuthContextType {
@@ -18,9 +21,12 @@ interface AuthContextType {
     email: string;
     phone: string;
     password: string;
+    role?: string;
   }) => Promise<User>;
   logout: () => void;
   isAuthenticated: boolean;
+  refreshUser: () => Promise<User | null>; // ✅ Add this
+  updateUser: (data: Partial<User>) => void; // ✅ Add this
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -37,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore session from localStorage on mount
+  // Restore session from localStorage
   useEffect(() => {
     const stored = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
@@ -65,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     email: string;
     phone: string;
     password: string;
+    role?: string;
   }): Promise<User> => {
     const { data } = await api.post(`${AUTH}/register`, regData);
     localStorage.setItem("accessToken", data.accessToken);
@@ -83,6 +90,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
   }, []);
 
+  // ✅ Refresh user data from the backend
+  const refreshUser = useCallback(async (): Promise<User | null> => {
+    try {
+      const { data } = await api.get(`${AUTH}/me`);
+      const userData = data.user || data;
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error("[Auth] Failed to refresh user:", error);
+      return null;
+    }
+  }, []);
+
+  // ✅ Update user data directly (for optimistic updates)
+  const updateUser = useCallback((data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    }
+  }, [user]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -92,6 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         register,
         logout,
         isAuthenticated: !!user,
+        refreshUser,
+        updateUser,
       }}
     >
       {children}
