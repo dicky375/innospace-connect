@@ -1,20 +1,42 @@
+import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface Props {
+interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  allowedRoles?: Array<"admin" | "affiliate">;
 }
 
-const ProtectedRoute = ({ children, allowedRoles }: Props) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  allowedRoles = [] 
+}) => {
   const { user, loading, isAuthenticated } = useAuth();
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    const path = user.role === "admin" ? "/admin" : user.role === "intern" ? "/intern" : "/dashboard";
-    return <Navigate to={path} replace />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
   }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If roles are specified, check if user has required role
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role as any)) {
+    // Redirect to appropriate dashboard based on role
+    if (user?.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+    if (user?.role === "affiliate") {
+      return <Navigate to="/affiliate" replace />;
+    }
+    return <Navigate to="/login" replace />;
+  }
+
   return <>{children}</>;
 };
 

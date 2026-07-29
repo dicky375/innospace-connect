@@ -1,32 +1,68 @@
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api, { STATS, PAYOUTS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Award, DollarSign, Clock, ArrowRight, Loader2 } from "lucide-react";
+import { Users, Award, DollarSign, Clock, ArrowRight, Loader2, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: stats, isLoading: loadingStats } = useQuery({
+  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
       const { data } = await api.get(`${STATS}/admin`);
+      console.log('[API] Stats response:', data);
       return data;
     },
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
-  const { data: payoutsData, isLoading: loadingPayouts } = useQuery({
+  const { data: payoutsData, isLoading: loadingPayouts, refetch: refetchPayouts } = useQuery({
     queryKey: ["pending-payouts-count"],
     queryFn: async () => {
       const { data } = await api.get(`${PAYOUTS}/pending`);
       return data;
     },
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["pending-payouts-count"] });
+    refetchStats();
+    refetchPayouts();
+  }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    console.log('[Dashboard] 🔄 Refreshing data...');
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      await queryClient.invalidateQueries({ queryKey: ["pending-payouts-count"] });
+      await refetchStats();
+      await refetchPayouts();
+      console.log('[Dashboard] ✅ Data refreshed!');
+    } catch (error) {
+      console.error('[Dashboard] ❌ Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const isLoading = loadingStats || loadingPayouts;
+
+  console.log('[Dashboard] Stats:', stats);
+  console.log('[Dashboard] Pending:', stats?.stats?.registrations?.pending);
 
   if (isLoading) {
     return (
@@ -43,36 +79,50 @@ const AdminDashboard = () => {
     return `₦${num.toLocaleString()}`;
   };
 
+  const pendingCount = stats?.stats?.registrations?.pending || 0;
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Platform overview and quick actions</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Platform overview and quick actions</p>
+          </div>
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            className="gap-2"
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
 
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Registrations"
-            value={stats?.registrations?.total || 0}
+            value={stats?.stats?.registrations?.total || 0}
             icon={Users}
             variant="primary"
           />
           <StatCard
             title="Pending Approvals"
-            value={stats?.registrations?.pending || 0}
+            value={pendingCount}
             icon={Clock}
           />
           <StatCard
             title="Total Revenue"
-            value={formatCurrency(parseFloat(stats?.revenue?.total || "0"))}
+            value={formatCurrency(parseFloat(stats?.stats?.revenue?.total || "0"))}
             icon={DollarSign}
             variant="accent"
           />
           <StatCard
             title="Active Programs"
-            value={stats?.programs?.active || 0}
+            value={stats?.stats?.programs?.active || 0}
             icon={Award}
           />
         </div>
@@ -80,7 +130,7 @@ const AdminDashboard = () => {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card
-            className="glass hover:border-primary/50 transition-all cursor-pointer group"
+            className="hover:border-primary/50 transition-all cursor-pointer group"
             onClick={() => navigate("/admin/approvals")}
           >
             <CardHeader>
@@ -90,9 +140,7 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold mb-2">
-                {stats?.registrations?.pending || 0}
-              </p>
+              <p className="text-4xl font-bold mb-2">{pendingCount}</p>
               <p className="text-sm text-muted-foreground flex items-center gap-1 group-hover:text-primary transition-colors">
                 Review now <ArrowRight className="h-4 w-4" />
               </p>
@@ -100,7 +148,7 @@ const AdminDashboard = () => {
           </Card>
 
           <Card
-            className="glass hover:border-primary/50 transition-all cursor-pointer group"
+            className="hover:border-primary/50 transition-all cursor-pointer group"
             onClick={() => navigate("/admin/payouts")}
           >
             <CardHeader>
@@ -110,9 +158,7 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold mb-2">
-                {payoutsData?.total || 0}
-              </p>
+              <p className="text-4xl font-bold mb-2">{payoutsData?.count || 0}</p>
               <p className="text-sm text-muted-foreground flex items-center gap-1 group-hover:text-primary transition-colors">
                 Process payments <ArrowRight className="h-4 w-4" />
               </p>

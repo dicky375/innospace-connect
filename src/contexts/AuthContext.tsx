@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api, { AUTH } from "@/lib/api";
+import api, { AUTH } from "../lib/api";  // ← Updated import path
 
 interface User {
   id: string;
@@ -42,7 +42,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const stored = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
     if (stored && token) {
-      setUser(JSON.parse(stored));
+      try {
+        setUser(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse user data", e);
+      }
     }
     setLoading(false);
   }, []);

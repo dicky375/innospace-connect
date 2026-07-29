@@ -35,11 +35,11 @@ const Login = () => {
       } else {
         navigate("/affiliate");
       }
-    } catch (error: any) {
+    } catch (err: any) {
       // FIX: backend returns { error: "..." } not { message: "..." }
       const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.message ||
         "Invalid credentials";
       toast.error(message);
     } finally {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api, { STATS } from "@/lib/api";
+import api, { CONFIG } from "@/lib/api";  // ✅ Use CONFIG from api
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Settings, UserCircle, Percent, Save, Loader2 } from "lucide-react";
 
-const COMMISSION_URL = "/reg/api/config/commission";
+// ✅ FIX: Use the correct monolith URL
+const COMMISSION_URL = `${CONFIG}/commission`;
 
 const AdminSettings = () => {
   const { user } = useAuth();
@@ -21,14 +22,16 @@ const AdminSettings = () => {
   const { data: config, isLoading } = useQuery({
     queryKey: ["commission-rate"],
     queryFn: async () => {
-      const { data } = await api.get(COMMISSION_URL);
+      // ✅ Use the constant from api.ts
+      const { data } = await api.get(`${CONFIG}/commission`);
       return data;
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (rate: string) =>
-      api.patch(COMMISSION_URL, { commissionRate: parseFloat(rate) }),
+      // ✅ Use the correct endpoint
+      api.patch(`${CONFIG}/commission`, { commissionRate: parseFloat(rate) }),
     onSuccess: (res) => {
       toast.success(res.data.message);
       queryClient.invalidateQueries({ queryKey: ["commission-rate"] });

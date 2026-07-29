@@ -13,19 +13,19 @@ const AdminUsers = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: affiliates, isLoading } = useQuery({
-    queryKey: ["admin-affiliates"],
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["admin-users"],
     queryFn: async () => {
-      const { data } = await api.get("auth/api/auth");
-      // Filter to only affiliates
-      return data.filter((u: any) => u.role === "affiliate");
+      // ✅ FIX: Use USERS constant instead of wrong path
+      const { data } = await api.get(USERS);
+      return data;
     },
   });
 
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => api.patch(`${USERS}/${id}/deactivate`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-affiliates"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("Account deactivated");
     },
     onError: (err: any) => {
@@ -36,7 +36,7 @@ const AdminUsers = () => {
   const activateMutation = useMutation({
     mutationFn: (id: string) => api.patch(`${USERS}/${id}/activate`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-affiliates"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("Account activated");
     },
     onError: (err: any) => {
@@ -44,12 +44,15 @@ const AdminUsers = () => {
     },
   });
 
-  const filtered =
-    affiliates?.filter(
-      (user: any) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+  // Filter users (affiliates only)
+  const filteredUsers = users?.users?.filter?.((user: any) => user.role === "affiliate") || [];
+  
+  // Apply search filter
+  const filtered = filteredUsers.filter(
+    (user: any) =>
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <DashboardLayout>
@@ -156,9 +159,7 @@ const AdminUsers = () => {
                                 size="sm"
                                 className="text-destructive hover:bg-destructive/10"
                                 onClick={() => {
-                                  if (
-                                    confirm(`Deactivate ${user.name}?`)
-                                  )
+                                  if (confirm(`Deactivate ${user.name}?`))
                                     deactivateMutation.mutate(user.id);
                                 }}
                               >
