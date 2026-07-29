@@ -17,25 +17,62 @@ const AffiliateProfile = () => {
   const [form, setForm] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
-    bankName: "",
-    accountNumber: "",
-    accountName: "",
+    bankName: user?.bankName || "",
+    accountNumber: user?.accountNumber || "",
+    accountName: user?.accountName || "",
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: typeof form) =>
-      api.patch(`${USERS}/profile`, payload),
-    onSuccess: () => {
+    mutationFn: async (payload: typeof form) => {
+      // ✅ Only send fields that have changed
+      const changes: any = {};
+      if (payload.name !== user?.name) changes.name = payload.name;
+      if (payload.phone !== user?.phone) changes.phone = payload.phone;
+      if (payload.bankName !== user?.bankName) changes.bankName = payload.bankName;
+      if (payload.accountNumber !== user?.accountNumber) changes.accountNumber = payload.accountNumber;
+      if (payload.accountName !== user?.accountName) changes.accountName = payload.accountName;
+      
+      console.log('[FRONTEND] Sending changes:', changes);
+      
+      const { data } = await api.patch(`${USERS}/profile`, changes);
+      return data;
+    },
+    onSuccess: (data) => {
       toast.success("Profile updated successfully");
+      
+      // ✅ Update the user in the AuthContext
+      if (data?.user) {
+        // Update the user in localStorage and context
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = { ...storedUser, ...data.user };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        // Force a refresh of the user data
+        window.dispatchEvent(new Event('storage'));
+      }
+      
+      // ✅ Invalidate the profile query
       queryClient.invalidateQueries({ queryKey: ["affiliate-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     },
     onError: (err: any) => {
+      console.error('[FRONTEND] Update error:', err.response?.data);
       toast.error(err?.response?.data?.error || "Failed to update profile");
     },
   });
 
   const update = (key: string, val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
+
+  // ✅ Check if any field has changed
+  const hasChanges = () => {
+    return (
+      form.name !== user?.name ||
+      form.phone !== user?.phone ||
+      form.bankName !== user?.bankName ||
+      form.accountNumber !== user?.accountNumber ||
+      form.accountName !== user?.accountName
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -134,7 +171,7 @@ const AffiliateProfile = () => {
 
             <Button
               onClick={() => updateMutation.mutate(form)}
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || !hasChanges()}
               className="w-full"
             >
               {updateMutation.isPending ? (
@@ -145,7 +182,7 @@ const AffiliateProfile = () => {
               ) : (
                 <span className="flex items-center gap-2">
                   <Save className="h-4 w-4" />
-                  Save Changes
+                  {hasChanges() ? "Save Changes" : "No Changes"}
                 </span>
               )}
             </Button>
