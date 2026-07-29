@@ -25,8 +25,8 @@ interface AuthContextType {
   }) => Promise<User>;
   logout: () => void;
   isAuthenticated: boolean;
-  refreshUser: () => Promise<User | null>; // ✅ Add this
-  updateUser: (data: Partial<User>) => void; // ✅ Add this
+  refreshUser: () => Promise<User | null>;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -104,14 +104,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // ✅ Update user data directly (for optimistic updates)
+  // ✅ Update user data directly using the functional update pattern
   const updateUser = useCallback((data: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...data };
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const updatedUser = { ...prevUser, ...data };
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
-  }, [user]);
+      console.log('[Auth] User updated:', updatedUser);
+      return updatedUser;
+    });
+  }, []);
 
   return (
     <AuthContext.Provider

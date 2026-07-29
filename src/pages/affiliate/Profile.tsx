@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext"; // ✅ Use the updated AuthContext
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { USERS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { UserCircle, Save, Loader2 } from "lucide-react";
 
 const AffiliateProfile = () => {
-  const { user, refreshUser, updateUser } = useAuth(); // ✅ Get refreshUser and updateUser
+  const { user, updateUser } = useAuth();
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
@@ -21,6 +21,19 @@ const AffiliateProfile = () => {
     accountNumber: user?.accountNumber || "",
     accountName: user?.accountName || "",
   });
+
+  // ✅ Update form when user changes
+  useEffect(() => {
+    if (user) {
+      setForm({
+        name: user.name || "",
+        phone: user.phone || "",
+        bankName: user.bankName || "",
+        accountNumber: user.accountNumber || "",
+        accountName: user.accountName || "",
+      });
+    }
+  }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: async (payload: typeof form) => {
@@ -44,7 +57,7 @@ const AffiliateProfile = () => {
       
       if (Object.keys(changes).length === 0) {
         toast.info("No changes to save");
-        return;
+        return null;
       }
       
       console.log('[FRONTEND] Sending changes:', changes);
@@ -53,18 +66,23 @@ const AffiliateProfile = () => {
       return data;
     },
     onSuccess: (data) => {
+      if (!data) return;
+      
       toast.success("Profile updated successfully");
       
       if (data?.user) {
-        // ✅ Update the AuthContext user directly
+        console.log('[FRONTEND] Updating user in context:', data.user);
+        
+        // ✅ Update the AuthContext user immediately
         updateUser(data.user);
         
-        // ✅ Also refresh from backend to ensure consistency
-        refreshUser();
+        // ✅ Invalidate queries to refresh any cached data
+        queryClient.invalidateQueries({ queryKey: ["affiliate-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        
+        // ✅ Log the updated user to verify
+        console.log('[FRONTEND] User after update:', user);
       }
-      
-      queryClient.invalidateQueries({ queryKey: ["affiliate-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     },
     onError: (err: any) => {
       console.error('[FRONTEND] Update error:', err.response?.data);
@@ -88,7 +106,117 @@ const AffiliateProfile = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl">
-        {/* ... rest of the component */}
+        <div>
+          <h1 className="text-2xl font-bold">Profile</h1>
+          <p className="text-muted-foreground text-sm">
+            Your account details and bank information
+          </p>
+        </div>
+
+        {/* Account Info */}
+        <div className="glass p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-16 w-16 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-white">
+              {user?.name?.charAt(0) || "?"}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">{user?.name || "Loading..."}</h2>
+              <p className="text-muted-foreground capitalize">{user?.role}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="p-4 rounded-lg bg-secondary/30">
+              <p className="text-xs text-muted-foreground mb-1">Email</p>
+              <p className="font-medium">{user?.email || "—"}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-secondary/30">
+              <p className="text-xs text-muted-foreground mb-1">Role</p>
+              <p className="font-medium capitalize">{user?.role || "—"}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Edit Profile */}
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCircle className="h-5 w-5 text-primary" />
+              Edit Profile & Bank Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  placeholder="Your full name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone Number</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => update("phone", e.target.value)}
+                  placeholder="08012345678"
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <p className="text-sm font-medium mb-3 text-muted-foreground">
+                Bank Details (for commission payouts)
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Bank Name</Label>
+                  <Input
+                    value={form.bankName}
+                    onChange={(e) => update("bankName", e.target.value)}
+                    placeholder="e.g. GTBank"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Account Number</Label>
+                  <Input
+                    value={form.accountNumber}
+                    onChange={(e) => update("accountNumber", e.target.value)}
+                    placeholder="0123456789"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Account Name</Label>
+                  <Input
+                    value={form.accountName}
+                    onChange={(e) => update("accountName", e.target.value)}
+                    placeholder="Name on bank account"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => updateMutation.mutate(form)}
+              disabled={updateMutation.isPending || !hasChanges()}
+              className="w-full"
+            >
+              {updateMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  {hasChanges() ? "Save Changes" : "No Changes"}
+                </span>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
