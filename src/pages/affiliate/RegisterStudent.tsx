@@ -1,38 +1,38 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import api, { PROGRAMS, REGISTRATIONS } from "@/lib/api";
+import api, { REGISTRATIONS, PROGRAMS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, UserPlus, Loader2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { UserPlus, Loader2 } from "lucide-react";
+import PaymentModal from "@/components/PaymentModal";
 
 const RegisterStudent = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
+    programId: "",
     studentName: "",
-    studentEmail: "",
     studentPhone: "",
-    regNumber: "",
+    studentEmail: "",
     course: "",
     department: "",
+    regNumber: "",
     hodName: "",
     supervisorName: "",
-    programId: "",
   });
-  const [siwesFile, setSiwesFile] = useState<File | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [registrationId, setRegistrationId] = useState("");
+  const [amount, setAmount] = useState(0);
+  const [studentEmail, setStudentEmail] = useState("");
+  const [studentName, setStudentName] = useState("");
 
-  const { data: programsData } = useQuery({
+  // Fetch programs
+  const { data: programsData, isLoading: programsLoading } = useQuery({
     queryKey: ["programs"],
     queryFn: async () => {
       const { data } = await api.get(PROGRAMS);
@@ -40,252 +40,235 @@ const RegisterStudent = () => {
     },
   });
 
-  const programs = programsData?.programs || programsData || [];
+  const programs = programsData?.programs || [];
 
-  const mutation = useMutation({
-    mutationFn: async (payload: FormData) => {
-      return await api.post(REGISTRATIONS, payload, {
+  const registerMutation = useMutation({
+    mutationFn: async (data: typeof form) => {
+      const formData = new FormData();
+      Object.keys(data).forEach((key) => {
+        if (data[key as keyof typeof form]) {
+          formData.append(key, data[key as keyof typeof form]);
+        }
+      });
+      const { data: response } = await api.post(REGISTRATIONS, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      return response;
     },
-    onSuccess: (res) => {
-      const commission = parseFloat(res.data.registration?.commissionEarned || 0);
-      toast.success(
-        `Registration submitted! ₦${(res.data.registration?.amount * 0.1).toLocaleString()} commission pending approval.`
-      );
-      setFormData({
+    onSuccess: (data) => {
+      toast.success("Student registered! Waiting for admin approval.");
+      
+      // Check if payment is required and show payment modal
+      const registration = data?.registration;
+      if (registration) {
+        setRegistrationId(registration.id);
+        setAmount(parseFloat(registration.amount) || 0);
+        setStudentEmail(registration.studentEmail || "");
+        setStudentName(registration.studentName || "");
+        setShowPayment(true);
+      }
+      
+      // Reset form
+      setForm({
+        programId: "",
         studentName: "",
-        studentEmail: "",
         studentPhone: "",
-        regNumber: "",
+        studentEmail: "",
         course: "",
         department: "",
+        regNumber: "",
         hodName: "",
         supervisorName: "",
-        programId: "",
       });
-      setSiwesFile(null);
-      navigate("/affiliate/registrations");
     },
-    onError: (error: any) => {
-      toast.error(
-        error.response?.data?.error || "Registration failed. Check details."
-      );
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || "Failed to register student");
     },
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setSiwesFile(e.target.files[0]);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.programId) return toast.error("Please select a program");
-    if (!formData.studentName) return toast.error("Student name is required");
-    if (!formData.studentPhone) return toast.error("Student phone is required");
-    if (!formData.regNumber) return toast.error("Registration number is required");
-    if (!formData.course) return toast.error("Course is required");
-    if (!formData.department) return toast.error("Department is required");
-    
-
-    const data = new FormData();
-    Object.entries(formData).forEach(([key, value]) => data.append(key, value));
-    if (siwesFile) data.append("siwesForm", siwesFile);
-
-    mutation.mutate(data);
+    if (!form.programId || !form.studentName || !form.studentPhone || !form.course || !form.department || !form.regNumber) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    registerMutation.mutate(form);
   };
+
+  const update = (key: string, val: string) =>
+    setForm((f) => ({ ...f, [key]: val }));
+
+  const selectedProgram = programs.find((p: any) => p.id === form.programId);
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <UserPlus className="h-8 w-8" /> Register New Student
-          </h1>
+      <div className="space-y-6 max-w-3xl mx-auto">
+        <div>
+          <h1 className="text-3xl font-bold">Register Student</h1>
           <p className="text-muted-foreground">
-            Fill in student details and earn 10% commission on approval
+            Register a new student for a program
           </p>
         </div>
 
         <Card className="glass">
           <CardHeader>
-            <CardTitle>Student Registration Form</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Student Details
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Program */}
-                <div className="space-y-2 md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Program *</Label>
                   <Select
-                    value={formData.programId}
-                    onValueChange={(val) =>
-                      setFormData({ ...formData, programId: val })
-                    }
+                    value={form.programId}
+                    onValueChange={(v) => update("programId", v)}
+                    required
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an active program" />
+                      <SelectValue placeholder="Select program" />
                     </SelectTrigger>
                     <SelectContent>
-                      {programs.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.title} — ₦{parseFloat(p.monthlyFee).toLocaleString()} (
-                          {p.type})
+                      {programsLoading ? (
+                        <SelectItem value="loading" disabled>
+                          Loading...
                         </SelectItem>
-                      ))}
+                      ) : programs.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          No programs available
+                        </SelectItem>
+                      ) : (
+                        programs.map((program: any) => (
+                          <SelectItem key={program.id} value={program.id}>
+                            {program.title} - ₦{parseFloat(program.price).toLocaleString()}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
+                  {selectedProgram && (
+                    <p className="text-xs text-muted-foreground">
+                      Price: ₦{parseFloat(selectedProgram.price).toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
-                {/* Student Name */}
                 <div className="space-y-2">
-                  <Label>Full Name *</Label>
+                  <Label>Student Name *</Label>
                   <Input
-                    name="studentName"
-                    placeholder="e.g. Emeka Eze"
-                    value={formData.studentName}
-                    onChange={handleInputChange}
+                    value={form.studentName}
+                    onChange={(e) => update("studentName", e.target.value)}
+                    placeholder="Full name"
                     required
                   />
                 </div>
 
-                {/* Phone */}
                 <div className="space-y-2">
-                  <Label>Phone Number *</Label>
+                  <Label>Student Phone *</Label>
                   <Input
-                    name="studentPhone"
-                    placeholder="e.g. 08012345678"
-                    value={formData.studentPhone}
-                    onChange={handleInputChange}
+                    value={form.studentPhone}
+                    onChange={(e) => update("studentPhone", e.target.value)}
+                    placeholder="08012345678"
                     required
                   />
                 </div>
 
-                {/* Email */}
                 <div className="space-y-2">
-                  <Label>Email Address</Label>
+                  <Label>Student Email</Label>
                   <Input
-                    name="studentEmail"
+                    value={form.studentEmail}
+                    onChange={(e) => update("studentEmail", e.target.value)}
+                    placeholder="student@example.com"
                     type="email"
-                    placeholder="student@email.com"
-                    value={formData.studentEmail}
-                    onChange={handleInputChange}
                   />
                 </div>
 
-                {/* Reg Number */}
-                <div className="space-y-2">
-                  <Label>Matric / Reg Number *</Label>
-                  <Input
-                    name="regNumber"
-                    placeholder="e.g. CSC/2021/001"
-                    value={formData.regNumber}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                {/* Course */}
                 <div className="space-y-2">
                   <Label>Course *</Label>
                   <Input
-                    name="course"
-                    placeholder="e.g. Computer Science"
-                    value={formData.course}
-                    onChange={handleInputChange}
+                    value={form.course}
+                    onChange={(e) => update("course", e.target.value)}
+                    placeholder="Computer Science"
                     required
                   />
                 </div>
 
-                {/* Department */}
                 <div className="space-y-2">
                   <Label>Department *</Label>
                   <Input
-                    name="department"
-                    placeholder="e.g. Science"
-                    value={formData.department}
-                    onChange={handleInputChange}
+                    value={form.department}
+                    onChange={(e) => update("department", e.target.value)}
+                    placeholder="Computing"
                     required
                   />
                 </div>
 
-                {/* HOD */}
                 <div className="space-y-2">
-                  <Label>HOD Name *(Optional)</Label>
+                  <Label>Registration Number *</Label>
                   <Input
-                    name="hodName"
-                    placeholder="e.g. Dr. Adeyemi"
-                    value={formData.hodName}
-                    onChange={handleInputChange}
-                   
+                    value={form.regNumber}
+                    onChange={(e) => update("regNumber", e.target.value)}
+                    placeholder="CS/2024/001"
+                    required
                   />
                 </div>
 
-                {/* Supervisor */}
                 <div className="space-y-2">
-                  <Label>Supervisor Name *(Optional)</Label>
+                  <Label>HOD Name</Label>
                   <Input
-                    name="supervisorName"
-                    placeholder="e.g. Engr. Bello"
-                    value={formData.supervisorName}
-                    onChange={handleInputChange}
-                    
+                    value={form.hodName}
+                    onChange={(e) => update("hodName", e.target.value)}
+                    placeholder="Dr. Smith"
                   />
                 </div>
-              </div>
 
-              {/* File Upload */}
-              <div className="space-y-2">
-                <Label>Upload SIWES Form (PDF/Image)</Label>
-                <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors">
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="siwes-upload"
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Supervisor Name</Label>
+                  <Input
+                    value={form.supervisorName}
+                    onChange={(e) => update("supervisorName", e.target.value)}
+                    placeholder="Mr. Johnson"
                   />
-                  <label
-                    htmlFor="siwes-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-                    <p className="font-medium">
-                      {siwesFile
-                        ? siwesFile.name
-                        : "Click to upload SIWES document"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PDF, DOC, JPG, PNG up to 10MB
-                    </p>
-                  </label>
                 </div>
               </div>
 
               <Button
                 type="submit"
-                size="lg"
+                disabled={registerMutation.isPending}
                 className="w-full"
-                disabled={mutation.isPending}
               >
-                {mutation.isPending ? (
+                {registerMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
+                    Registering...
                   </span>
                 ) : (
-                  "Register Student"
+                  <span className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Register Student
+                  </span>
                 )}
               </Button>
             </form>
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={showPayment}
+        onOpenChange={setShowPayment}
+        registrationId={registrationId}
+        amount={amount}
+        studentName={studentName}
+        studentEmail={studentEmail}
+        onSuccess={() => {
+          toast.success("Payment completed! Registration is now paid.");
+          navigate("/affiliate/registrations");
+        }}
+      />
     </DashboardLayout>
   );
 };
