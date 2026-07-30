@@ -1,38 +1,113 @@
-import { useState, useEffect } from "react";
-import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  LayoutDashboard, Users, BookOpen, ClipboardCheck, Wallet, User, LogOut, Zap, Trophy, Settings,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import DarkModeToggle from "@/components/DarkModeToggle";  // ✅ Correct import
 
-const DarkModeToggle = () => {
-  const [isDark, setIsDark] = useState(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored) return stored === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+const affiliateLinks = [
+  { to: "/affiliate", icon: LayoutDashboard, label: "Overview" },
+  { to: "/affiliate/registrations", icon: ClipboardCheck, label: "My Registrations" },
+  { to: "/affiliate/leaderboard", icon: Trophy, label: "Leaderboard" },
+  { to: "/affiliate/wallet", icon: Wallet, label: "Wallet" },
+  { to: "/affiliate/profile", icon: User, label: "Profile" },
+];
 
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDark]);
+const adminLinks = [
+  { to: "/admin", icon: LayoutDashboard, label: "Overview" },
+  { to: "/admin/programs", icon: BookOpen, label: "Programs" },
+  { to: "/admin/registrations", icon: ClipboardCheck, label: "Registrations" },
+  { to: "/admin/approvals", icon: ClipboardCheck, label: "Approvals" },
+  { to: "/admin/users", icon: Users, label: "Users" },
+  { to: "/admin/settings", icon: Settings, label: "Settings" },
+];
+
+const userLinks = [
+  { to: "/dashboard", icon: LayoutDashboard, label: "My Programs" },
+  { to: "/dashboard/profile", icon: User, label: "Profile" },
+];
+
+const DashboardSidebar = () => {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const links = user?.role === "admin" ? adminLinks : user?.role === "affiliate" ? affiliateLinks : userLinks;
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => setIsDark(!isDark)}
-      className="rounded-full h-8 w-8 p-0 hover:bg-sidebar-accent"
-    >
-      {isDark ? (
-        <Sun className="h-4 w-4 text-yellow-400" />
-      ) : (
-        <Moon className="h-4 w-4 text-slate-700 dark:text-slate-300" />
-      )}
-    </Button>
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-40">
+      {/* Logo */}
+      <div className="p-4 border-b border-sidebar-border">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
+            <Zap className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span className="text-lg font-bold text-sidebar-foreground">InnoSpaceX</span>
+        </Link>
+      </div>
+
+      {/* Debug: Check if this appears */}
+<div className="px-3 py-2 text-xs text-green-400 bg-green-900/30 rounded-lg mx-3 mb-2">
+  🔍 Sidebar is rendering
+</div>
+      
+<div className="flex items-center justify-between px-3 py-2 rounded-lg bg-sidebar-accent/50">
+  <span className="text-sm text-sidebar-foreground/70">Theme</span>
+  <DarkModeToggle />
+</div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {links.map((link) => {
+          const active = location.pathname === link.to;
+          return (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                active
+                  ? "gradient-primary text-primary-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+            >
+              <link.icon className="h-4 w-4" />
+              {link.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Bottom Section */}
+      <div className="p-3 border-t border-sidebar-border space-y-3">
+        {/* Dark Mode Toggle */}
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-sidebar-accent/50">
+          <span className="text-sm text-sidebar-foreground/70">Theme</span>
+          <DarkModeToggle />
+        </div>
+
+        {/* User Info */}
+        <div className="flex items-center gap-3 px-3 py-2">
+          <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+            {user?.name?.charAt(0) || "U"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.name}</p>
+            <p className="text-xs text-sidebar-foreground/50 capitalize">{user?.role}</p>
+          </div>
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
+      </div>
+    </aside>
   );
 };
 
-export default DarkModeToggle;
+export default DashboardSidebar;
