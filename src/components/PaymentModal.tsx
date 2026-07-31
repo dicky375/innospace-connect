@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, X } from "lucide-react";
 import { toast } from "sonner";
 
 declare global {
@@ -36,7 +30,6 @@ const PaymentModal = ({
 }: PaymentModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load Paystack script when modal opens
   useEffect(() => {
     if (open && !window.PaystackPop) {
       const script = document.createElement("script");
@@ -58,14 +51,14 @@ const PaymentModal = ({
     const handler = window.PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "",
       email: studentEmail,
-      amount: amount * 100, // Paystack uses kobo
+      amount: amount * 100,
       ref: `reg-${registrationId}-${Date.now()}`,
       metadata: {
         registrationId,
         studentName,
         studentEmail,
       },
-      callback: (response: any) => {
+      callback: () => {
         toast.success("Payment successful! Registration confirmed.");
         setIsLoading(false);
         onSuccess();
@@ -80,33 +73,48 @@ const PaymentModal = ({
     handler.openIframe();
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            Complete Payment
-          </DialogTitle>
-        </DialogHeader>
+  if (!open) return null;
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Student</p>
-            <p className="font-medium">{studentName}</p>
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in-0 zoom-in-95 duration-200">
+        {/* Close button */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute top-4 right-4 p-1 hover:bg-secondary rounded-full transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <CreditCard className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold">Complete Payment</h2>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Amount</p>
-            <p className="text-2xl font-bold text-primary">
-              ₦{amount.toLocaleString()}
-            </p>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center border-b border-border pb-2">
+              <span className="text-muted-foreground">Student</span>
+              <span className="font-medium">{studentName}</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-border pb-2">
+              <span className="text-muted-foreground">Amount</span>
+              <span className="text-2xl font-bold text-primary">
+                ₦{amount.toLocaleString()}
+              </span>
+            </div>
+            <div className="bg-secondary/30 p-3 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">💳 Pay with Card, Bank Transfer, or USSD</p>
+            </div>
           </div>
 
           <Button
             onClick={handlePayment}
             disabled={isLoading}
             className="w-full"
+            size="lg"
           >
             {isLoading ? (
               <>
@@ -121,12 +129,12 @@ const PaymentModal = ({
             )}
           </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
+          <p className="text-xs text-center text-muted-foreground">
             You will be redirected to Paystack to complete payment
           </p>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 
