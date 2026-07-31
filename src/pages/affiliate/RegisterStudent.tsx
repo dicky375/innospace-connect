@@ -58,9 +58,19 @@ const RegisterStudent = () => {
     onSuccess: (data) => {
       toast.success("Student registered! Waiting for admin approval.");
       
-      // Check if payment is required and show payment modal
+      // Store registration info for payment after approval
       const registration = data?.registration;
       if (registration) {
+        // Save registration details to localStorage for later payment
+        const pendingPayment = {
+          registrationId: registration.id,
+          amount: parseFloat(registration.amount) || 0,
+          studentEmail: registration.studentEmail || "",
+          studentName: registration.studentName || "",
+        };
+        localStorage.setItem("pendingPayment", JSON.stringify(pendingPayment));
+        
+        // Show payment modal immediately (affiliate pays now, admin approves later)
         setRegistrationId(registration.id);
         setAmount(parseFloat(registration.amount) || 0);
         setStudentEmail(registration.studentEmail || "");
