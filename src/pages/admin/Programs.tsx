@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Edit2, X, Check } from "lucide-react";
+import { Plus, Trash2, Loader2, Edit2, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Program {
@@ -69,7 +69,6 @@ const AdminPrograms = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-programs"] });
       toast.success("Program updated");
       setEditingId(null);
-      setEditForm(emptyForm);
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.error || "Failed to update program");
@@ -109,7 +108,7 @@ const AdminPrograms = () => {
       title: program.title,
       description: program.description || "",
       type: program.type,
-      monthlyFee: program.monthlyFee,
+      monthlyFee: program.monthlyFee.toString(),
       durationMonths: program.durationMonths.toString(),
       category: program.category || "",
     });
@@ -128,7 +127,7 @@ const AdminPrograms = () => {
     });
   };
 
-  // ✅ Fixed ProgramForm - properly handles state updates
+  // ✅ Simple form component - no validation on input, just plain inputs
   const ProgramForm = ({
     form,
     setForm,
@@ -167,31 +166,19 @@ const AdminPrograms = () => {
       <div className="space-y-2">
         <Label>Fee (₦) *</Label>
         <Input
-          type="number"
+          type="text"
           placeholder="e.g. 50000"
           value={form.monthlyFee}
-          onChange={(e) => {
-            // ✅ Only update if value is not empty string or is a valid number
-            const val = e.target.value;
-            if (val === '' || /^\d*\.?\d*$/.test(val)) {
-              setForm({ ...form, monthlyFee: val });
-            }
-          }}
+          onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
         />
       </div>
       <div className="space-y-2">
         <Label>Duration (months) *</Label>
         <Input
-          type="number"
+          type="text"
           placeholder="e.g. 3"
           value={form.durationMonths}
-          onChange={(e) => {
-            // ✅ Only update if value is not empty string or is a valid number
-            const val = e.target.value;
-            if (val === '' || /^\d+$/.test(val)) {
-              setForm({ ...form, durationMonths: val });
-            }
-          }}
+          onChange={(e) => setForm({ ...form, durationMonths: e.target.value })}
         />
       </div>
       <div className="space-y-2">
@@ -284,10 +271,7 @@ const AdminPrograms = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setEditingId(null);
-                            setEditForm(emptyForm);
-                          }}
+                          onClick={() => setEditingId(null)}
                         >
                           <X className="h-4 w-4" />
                         </Button>
