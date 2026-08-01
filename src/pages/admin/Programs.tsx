@@ -69,6 +69,7 @@ const AdminPrograms = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-programs"] });
       toast.success("Program updated");
       setEditingId(null);
+      setEditForm(emptyForm);
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.error || "Failed to update program");
@@ -127,6 +128,7 @@ const AdminPrograms = () => {
     });
   };
 
+  // ✅ Fixed ProgramForm - properly handles state updates
   const ProgramForm = ({
     form,
     setForm,
@@ -168,7 +170,13 @@ const AdminPrograms = () => {
           type="number"
           placeholder="e.g. 50000"
           value={form.monthlyFee}
-          onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
+          onChange={(e) => {
+            // ✅ Only update if value is not empty string or is a valid number
+            const val = e.target.value;
+            if (val === '' || /^\d*\.?\d*$/.test(val)) {
+              setForm({ ...form, monthlyFee: val });
+            }
+          }}
         />
       </div>
       <div className="space-y-2">
@@ -177,7 +185,13 @@ const AdminPrograms = () => {
           type="number"
           placeholder="e.g. 3"
           value={form.durationMonths}
-          onChange={(e) => setForm({ ...form, durationMonths: e.target.value })}
+          onChange={(e) => {
+            // ✅ Only update if value is not empty string or is a valid number
+            const val = e.target.value;
+            if (val === '' || /^\d+$/.test(val)) {
+              setForm({ ...form, durationMonths: val });
+            }
+          }}
         />
       </div>
       <div className="space-y-2">
@@ -270,7 +284,10 @@ const AdminPrograms = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEditingId(null)}
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditForm(emptyForm);
+                          }}
                         >
                           <X className="h-4 w-4" />
                         </Button>
