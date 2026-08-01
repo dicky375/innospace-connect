@@ -5,7 +5,6 @@ import api, { REGISTRATIONS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, UserPlus, Loader2 } from "lucide-react";
 
@@ -31,31 +30,36 @@ const AffiliateRegistrations = () => {
   const [filterStatus, setFilterStatus] = useState("all");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["my-registrations"],
+    queryKey: ["my-registrations", filterStatus],
     queryFn: async () => {
       const { data } = await api.get(`${REGISTRATIONS}/my`);
-      console.log('[AffiliateRegistrations] 📦 Data:', data);
+      console.log('[AffiliateRegistrations] Data received:', data);
       return data;
     },
   });
 
-  // ✅ CORRECT: data.registrations is the array
+  // ✅ FIX: Access registrations from data object
   const registrations = data?.registrations || [];
 
   // ✅ Apply filters
-  const filtered = registrations.filter((reg: any) => {
-    // Status filter
-    if (filterStatus !== "all" && reg.status !== filterStatus) {
-      return false;
-    }
-    // Search filter
-    if (searchTerm) {
-      const match = reg.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    reg.Program?.title?.toLowerCase().includes(searchTerm.toLowerCase());
-      if (!match) return false;
-    }
-    return true;
-  });
+  let filtered = registrations;
+  
+  // Status filter
+  if (filterStatus !== "all") {
+    filtered = filtered.filter((reg: any) => reg.status === filterStatus);
+  }
+  
+  // Search filter
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    filtered = filtered.filter((reg: any) => {
+      const matchName = reg.studentName?.toLowerCase().includes(searchLower);
+      const matchProgram = reg.Program?.title?.toLowerCase().includes(searchLower);
+      return matchName || matchProgram;
+    });
+  }
+
+  console.log('[Filter Debug] Total:', registrations.length, 'Filtered:', filtered.length);
 
   return (
     <DashboardLayout>
