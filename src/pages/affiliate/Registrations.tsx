@@ -38,18 +38,15 @@ const AffiliateRegistrations = () => {
     },
   });
 
-  // ✅ FIX: Access registrations from data object
   const registrations = data?.registrations || [];
 
-  // ✅ Apply filters
+  // Apply filters
   let filtered = registrations;
   
-  // Status filter
   if (filterStatus !== "all") {
     filtered = filtered.filter((reg: any) => reg.status === filterStatus);
   }
   
-  // Search filter
   if (searchTerm) {
     const searchLower = searchTerm.toLowerCase();
     filtered = filtered.filter((reg: any) => {
@@ -58,8 +55,6 @@ const AffiliateRegistrations = () => {
       return matchName || matchProgram;
     });
   }
-
-  console.log('[Filter Debug] Total:', registrations.length, 'Filtered:', filtered.length);
 
   return (
     <DashboardLayout>
@@ -124,15 +119,13 @@ const AffiliateRegistrations = () => {
             ) : filtered.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">
                 <p>No registrations found</p>
-                <p className="text-sm mt-1">
-                  {filterStatus !== "all" ? `Filter: ${statusLabels[filterStatus]}` : ""}
-                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-secondary/50">
                     <tr>
+                      <th className="text-left py-4 px-6 font-semibold">Affiliate</th>
                       <th className="text-left py-4 px-6 font-semibold">Student</th>
                       <th className="text-left py-4 px-6 font-semibold">Program</th>
                       <th className="text-left py-4 px-6 font-semibold">Reg No.</th>
@@ -147,6 +140,9 @@ const AffiliateRegistrations = () => {
                         key={reg.id}
                         className="border-b border-border/50 hover:bg-secondary/20 transition-colors"
                       >
+                        <td className="py-4 px-6 text-muted-foreground">
+                          {reg.affiliate?.name || "—"}
+                        </td>
                         <td className="py-4 px-6">
                           <p className="font-medium">{reg.studentName}</p>
                           <p className="text-xs text-muted-foreground">
