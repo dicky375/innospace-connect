@@ -25,23 +25,27 @@ const AdminRegistrations = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useQuery({
+  // ✅ Query with status filter
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["all-registrations", filter],
     queryFn: async () => {
-      // ✅ Only send status filter if not "all"
-      const params = filter !== "all" ? `?status=${filter}` : "";
-      const { data } = await api.get(`${REGISTRATIONS}/all${params}`);
-      console.log('[AdminRegistrations] Filter:', filter, 'Data:', data); // Debug log
+      // Only add status param if not "all"
+      const url = filter !== "all" 
+        ? `${REGISTRATIONS}/all?status=${filter}`
+        : `${REGISTRATIONS}/all`;
+      
+      console.log('[AdminRegistrations] Fetching:', url);
+      const { data } = await api.get(url);
+      console.log('[AdminRegistrations] Data received:', data);
       return data;
     },
   });
 
   const registrations = data?.registrations || [];
 
-  // ✅ Apply search filter on the frontend
+  // ✅ Apply search filter on frontend
   const filtered = registrations.filter((r: any) => {
     if (!search) return true;
-    
     const searchLower = search.toLowerCase();
     return (
       r.studentName?.toLowerCase().includes(searchLower) ||
@@ -50,7 +54,7 @@ const AdminRegistrations = () => {
     );
   });
 
-  // ✅ Fix the file URL - use production URL
+  // ✅ Fix file URL for production
   const getFileUrl = (r: any) =>
     `https://innospace.onrender.com/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`;
 
@@ -74,7 +78,10 @@ const AdminRegistrations = () => {
             {["all", "pending_approval", "approved", "paid", "rejected", "cancelled"].map((s) => (
               <button
                 key={s}
-                onClick={() => setFilter(s)}
+                onClick={() => {
+                  setFilter(s);
+                  refetch(); // ✅ Refetch when filter changes
+                }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   filter === s
                     ? "bg-primary text-white"
