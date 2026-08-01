@@ -25,8 +25,7 @@ const AdminRegistrations = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
-  // ✅ Query with status filter
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["all-registrations", filter],
     queryFn: async () => {
       // Only add status param if not "all"
@@ -34,9 +33,9 @@ const AdminRegistrations = () => {
         ? `${REGISTRATIONS}/all?status=${filter}`
         : `${REGISTRATIONS}/all`;
       
-      console.log('[AdminRegistrations] Fetching:', url);
+      console.log('[AdminRegistrations] 🔍 Fetching:', url);
       const { data } = await api.get(url);
-      console.log('[AdminRegistrations] Data received:', data);
+      console.log('[AdminRegistrations] 📦 Data received:', data);
       return data;
     },
   });
@@ -54,7 +53,6 @@ const AdminRegistrations = () => {
     );
   });
 
-  // ✅ Fix file URL for production
   const getFileUrl = (r: any) =>
     `https://innospace.onrender.com/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`;
 
@@ -78,10 +76,7 @@ const AdminRegistrations = () => {
             {["all", "pending_approval", "approved", "paid", "rejected", "cancelled"].map((s) => (
               <button
                 key={s}
-                onClick={() => {
-                  setFilter(s);
-                  refetch(); // ✅ Refetch when filter changes
-                }}
+                onClick={() => setFilter(s)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   filter === s
                     ? "bg-primary text-white"
