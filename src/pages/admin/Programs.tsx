@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { PROGRAMS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -108,7 +108,7 @@ const AdminPrograms = () => {
       title: program.title,
       description: program.description || "",
       type: program.type,
-      monthlyFee: program.monthlyFee.toString(),
+      monthlyFee: program.monthlyFee,
       durationMonths: program.durationMonths.toString(),
       category: program.category || "",
     });
@@ -127,7 +127,7 @@ const AdminPrograms = () => {
     });
   };
 
-  // ✅ Simple form component - no validation on input, just plain inputs
+  // ✅ Fixed ProgramForm with stable input handling
   const ProgramForm = ({
     form,
     setForm,
@@ -140,79 +140,94 @@ const AdminPrograms = () => {
     onSubmit: () => void;
     loading: boolean;
     submitLabel: string;
-  }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label>Program Title *</Label>
-        <Input
-          placeholder="e.g. Software Engineering Internship"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Type *</Label>
-        <select
-          className="w-full border border-input bg-background px-3 py-2 rounded-md outline-none"
-          value={form.type}
-          onChange={(e) =>
-            setForm({ ...form, type: e.target.value as "internship" | "siwes" })
-          }
+  }) => {
+    // ✅ Use local state to prevent re-render issues
+    const [localForm, setLocalForm] = useState(form);
+
+    // ✅ Update local form when props change
+    useEffect(() => {
+      setLocalForm(form);
+    }, [form]);
+
+    const handleChange = (field: string, value: string) => {
+      const updated = { ...localForm, [field]: value };
+      setLocalForm(updated);
+      setForm(updated);
+    };
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Program Title *</Label>
+          <Input
+            placeholder="e.g. Software Engineering Internship"
+            value={localForm.title}
+            onChange={(e) => handleChange("title", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Type *</Label>
+          <select
+            className="w-full border border-input bg-background px-3 py-2 rounded-md outline-none"
+            value={localForm.type}
+            onChange={(e) => handleChange("type", e.target.value)}
+          >
+            <option value="internship">Internship</option>
+            <option value="siwes">SIWES</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label>Fee (₦) *</Label>
+          <Input
+            placeholder="e.g. 50000"
+            value={localForm.monthlyFee}
+            onChange={(e) => handleChange("monthlyFee", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Duration (months) *</Label>
+          <Input
+            placeholder="e.g. 3"
+            value={localForm.durationMonths}
+            onChange={(e) => handleChange("durationMonths", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Input
+            placeholder="e.g. Technology"
+            value={localForm.category}
+            onChange={(e) => handleChange("category", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Description</Label>
+          <Input
+            placeholder="Brief description"
+            value={localForm.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+          />
+        </div>
+        <Button
+          onClick={() => {
+            setForm(localForm);
+            onSubmit();
+          }}
+          className="md:col-span-2 h-11"
+          disabled={loading}
         >
-          <option value="internship">Internship</option>
-          <option value="siwes">SIWES</option>
-        </select>
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </span>
+          ) : (
+            submitLabel
+          )}
+        </Button>
       </div>
-      <div className="space-y-2">
-        <Label>Fee (₦) *</Label>
-        <Input
-          type="text"
-          placeholder="e.g. 50000"
-          value={form.monthlyFee}
-          onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Duration (months) *</Label>
-        <Input
-          type="text"
-          placeholder="e.g. 3"
-          value={form.durationMonths}
-          onChange={(e) => setForm({ ...form, durationMonths: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Category</Label>
-        <Input
-          placeholder="e.g. Technology"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Input
-          placeholder="Brief description"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-      </div>
-      <Button
-        onClick={onSubmit}
-        className="md:col-span-2 h-11"
-        disabled={loading}
-      >
-        {loading ? (
-          <span className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Saving...
-          </span>
-        ) : (
-          submitLabel
-        )}
-      </Button>
-    </div>
-  );
+    );
+  };
 
   return (
     <DashboardLayout>
