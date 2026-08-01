@@ -8,9 +8,9 @@ import api, { REGISTRATIONS } from "@/lib/api";
 const statusColors: Record<string, string> = {
   paid: "bg-green-500/20 text-green-400",
   approved: "bg-blue-500/20 text-blue-400",
-  pending_approval: "bg-accent/20 text-accent",
-  rejected: "bg-destructive/20 text-destructive",
-  cancelled: "bg-muted/20 text-muted-foreground",
+  pending_approval: "bg-yellow-500/20 text-yellow-400",
+  rejected: "bg-red-500/20 text-red-500",
+  cancelled: "bg-gray-500/20 text-gray-400",
 };
 
 const statusLabels: Record<string, string> = {
@@ -28,25 +28,32 @@ const AdminRegistrations = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["all-registrations", filter],
     queryFn: async () => {
+      // ✅ Only send status filter if not "all"
       const params = filter !== "all" ? `?status=${filter}` : "";
       const { data } = await api.get(`${REGISTRATIONS}/all${params}`);
+      console.log('[AdminRegistrations] Filter:', filter, 'Data:', data); // Debug log
       return data;
     },
   });
 
   const registrations = data?.registrations || [];
 
+  // ✅ Apply search filter on the frontend
   const filtered = registrations.filter((r: any) => {
-    const matchSearch =
-      !search ||
-      r.Program?.title?.toLowerCase().includes(search.toLowerCase()) ||
-      r.studentName?.toLowerCase().includes(search.toLowerCase());
-    return matchSearch;
+    if (!search) return true;
+    
+    const searchLower = search.toLowerCase();
+    return (
+      r.studentName?.toLowerCase().includes(searchLower) ||
+      r.Program?.title?.toLowerCase().includes(searchLower) ||
+      r.regNumber?.toLowerCase().includes(searchLower)
+    );
   });
 
- const getFileUrl = (r: any) =>
-  `http://localhost:3000/reg/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`;
- 
+  // ✅ Fix the file URL - use production URL
+  const getFileUrl = (r: any) =>
+    `https://innospace.onrender.com/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -64,17 +71,17 @@ const AdminRegistrations = () => {
             className="max-w-xs bg-secondary/50 border-glass-border"
           />
           <div className="flex gap-2 flex-wrap">
-            {["all", "pending_approval", "approved", "paid", "rejected"].map((s) => (
+            {["all", "pending_approval", "approved", "paid", "rejected", "cancelled"].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   filter === s
-                    ? "gradient-primary text-white"
+                    ? "bg-primary text-white"
                     : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
                 }`}
               >
-                {s === "all" ? "All" : statusLabels[s]}
+                {s === "all" ? "All" : statusLabels[s] || s}
               </button>
             ))}
           </div>
@@ -88,7 +95,9 @@ const AdminRegistrations = () => {
             </div>
           ) : filtered.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">
-              No registrations found
+              {filter !== "all" 
+                ? `No ${statusLabels[filter]?.toLowerCase() || filter} registrations found`
+                : "No registrations found"}
             </p>
           ) : (
             <div className="overflow-x-auto">
