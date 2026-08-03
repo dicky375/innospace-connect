@@ -15,25 +15,23 @@ interface Program {
   title: string;
   description: string;
   type: "internship" | "siwes";
-  monthlyFee: string;
+  price: string;
   durationMonths: number;
   category: string;
   isActive: boolean;
-  commissionRate: string;
-  commissionAmount: string;
+  affiliateCommission: string;
 }
 
 const emptyForm = {
   title: "",
   description: "",
   type: "internship" as "internship" | "siwes",
-  monthlyFee: "",
+  price: "",
   durationMonths: "",
   category: "",
+  affiliateCommission: "",
 };
 
-// ✅ Moved OUTSIDE AdminPrograms — stable component identity across renders.
-// No more localForm/useEffect needed; parent state drives it directly.
 const ProgramForm = ({
   form,
   setForm,
@@ -53,7 +51,7 @@ const ProgramForm = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
+      <div className="space-y-2 md:col-span-2">
         <Label>Program Title *</Label>
         <Input
           placeholder="e.g. Software Engineering Internship"
@@ -73,20 +71,21 @@ const ProgramForm = ({
         </select>
       </div>
       <div className="space-y-2">
-        <Label>Fee (₦) *</Label>
-        <Input
-          placeholder="e.g. 50000"
-          value={form.monthlyFee}
-          onChange={(e) => handleChange("monthlyFee", e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
         <Label>Duration (months) *</Label>
         <Input
           placeholder="e.g. 3"
           value={form.durationMonths}
           onChange={(e) => handleChange("durationMonths", e.target.value)}
         />
+      </div>
+      <div className="space-y-2">
+        <Label>Price (₦) *</Label>
+        <Input
+          placeholder="e.g. 250000"
+          value={form.price}
+          onChange={(e) => handleChange("price", e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">Total program price</p>
       </div>
       <div className="space-y-2">
         <Label>Category</Label>
@@ -97,6 +96,15 @@ const ProgramForm = ({
         />
       </div>
       <div className="space-y-2">
+        <Label>Affiliate Commission (₦)</Label>
+        <Input
+          placeholder="e.g. 35000"
+          value={form.affiliateCommission}
+          onChange={(e) => handleChange("affiliateCommission", e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">Amount paid to affiliate per registration</p>
+      </div>
+      <div className="space-y-2 md:col-span-2">
         <Label>Description</Label>
         <Input
           placeholder="Brief description"
@@ -183,12 +191,15 @@ const AdminPrograms = () => {
   });
 
   const handleAdd = () => {
-    if (!newProgram.title || !newProgram.monthlyFee || !newProgram.durationMonths)
-      return toast.error("Title, fee and duration are required");
+    if (!newProgram.title || !newProgram.price || !newProgram.durationMonths) {
+      toast.error("Title, price and duration are required");
+      return;
+    }
     createMutation.mutate({
       ...newProgram,
-      monthlyFee: parseFloat(newProgram.monthlyFee),
+      price: parseFloat(newProgram.price),
       durationMonths: parseInt(newProgram.durationMonths),
+      affiliateCommission: newProgram.affiliateCommission ? parseFloat(newProgram.affiliateCommission) : 35000,
     });
   };
 
@@ -198,21 +209,25 @@ const AdminPrograms = () => {
       title: program.title,
       description: program.description || "",
       type: program.type,
-      monthlyFee: program.monthlyFee,
+      price: program.price,
       durationMonths: program.durationMonths.toString(),
       category: program.category || "",
+      affiliateCommission: program.affiliateCommission || "",
     });
   };
 
   const handleEdit = (id: string) => {
-    if (!editForm.title || !editForm.monthlyFee || !editForm.durationMonths)
-      return toast.error("Title, fee and duration are required");
+    if (!editForm.title || !editForm.price || !editForm.durationMonths) {
+      toast.error("Title, price and duration are required");
+      return;
+    }
     updateMutation.mutate({
       id,
       payload: {
         ...editForm,
-        monthlyFee: parseFloat(editForm.monthlyFee),
+        price: parseFloat(editForm.price),
         durationMonths: parseInt(editForm.durationMonths),
+        affiliateCommission: editForm.affiliateCommission ? parseFloat(editForm.affiliateCommission) : 35000,
       },
     });
   };
@@ -294,11 +309,10 @@ const AdminPrograms = () => {
                         </p>
                         <div className="flex items-center gap-4 mt-1">
                           <p className="font-bold text-primary">
-                            ₦{parseFloat(program.monthlyFee).toLocaleString()}
+                            ₦{parseFloat(program.price).toLocaleString()}
                           </p>
                           <p className="text-green-400 text-sm">
-                            {program.commissionRate}% commission = ₦
-                            {parseFloat(program.commissionAmount).toLocaleString()}
+                            Commission: ₦{parseFloat(program.affiliateCommission || "35000").toLocaleString()}
                           </p>
                         </div>
                       </div>
