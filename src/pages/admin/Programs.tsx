@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { PROGRAMS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -30,6 +30,96 @@ const emptyForm = {
   monthlyFee: "",
   durationMonths: "",
   category: "",
+};
+
+// ✅ Moved OUTSIDE AdminPrograms — stable component identity across renders.
+// No more localForm/useEffect needed; parent state drives it directly.
+const ProgramForm = ({
+  form,
+  setForm,
+  onSubmit,
+  loading,
+  submitLabel,
+}: {
+  form: typeof emptyForm;
+  setForm: (f: typeof emptyForm) => void;
+  onSubmit: () => void;
+  loading: boolean;
+  submitLabel: string;
+}) => {
+  const handleChange = (field: string, value: string) => {
+    setForm({ ...form, [field]: value });
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label>Program Title *</Label>
+        <Input
+          placeholder="e.g. Software Engineering Internship"
+          value={form.title}
+          onChange={(e) => handleChange("title", e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Type *</Label>
+        <select
+          className="w-full border border-input bg-background px-3 py-2 rounded-md outline-none"
+          value={form.type}
+          onChange={(e) => handleChange("type", e.target.value)}
+        >
+          <option value="internship">Internship</option>
+          <option value="siwes">SIWES</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label>Fee (₦) *</Label>
+        <Input
+          placeholder="e.g. 50000"
+          value={form.monthlyFee}
+          onChange={(e) => handleChange("monthlyFee", e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Duration (months) *</Label>
+        <Input
+          placeholder="e.g. 3"
+          value={form.durationMonths}
+          onChange={(e) => handleChange("durationMonths", e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Category</Label>
+        <Input
+          placeholder="e.g. Technology"
+          value={form.category}
+          onChange={(e) => handleChange("category", e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Description</Label>
+        <Input
+          placeholder="Brief description"
+          value={form.description}
+          onChange={(e) => handleChange("description", e.target.value)}
+        />
+      </div>
+      <Button
+        onClick={onSubmit}
+        className="md:col-span-2 h-11"
+        disabled={loading}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Saving...
+          </span>
+        ) : (
+          submitLabel
+        )}
+      </Button>
+    </div>
+  );
 };
 
 const AdminPrograms = () => {
@@ -127,108 +217,6 @@ const AdminPrograms = () => {
     });
   };
 
-  // ✅ Fixed ProgramForm with stable input handling
-  const ProgramForm = ({
-    form,
-    setForm,
-    onSubmit,
-    loading,
-    submitLabel,
-  }: {
-    form: typeof emptyForm;
-    setForm: (f: typeof emptyForm) => void;
-    onSubmit: () => void;
-    loading: boolean;
-    submitLabel: string;
-  }) => {
-    // ✅ Use local state to prevent re-render issues
-    const [localForm, setLocalForm] = useState(form);
-
-    // ✅ Update local form when props change
-    useEffect(() => {
-      setLocalForm(form);
-    }, [form]);
-
-    const handleChange = (field: string, value: string) => {
-      const updated = { ...localForm, [field]: value };
-      setLocalForm(updated);
-      setForm(updated);
-    };
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Program Title *</Label>
-          <Input
-            placeholder="e.g. Software Engineering Internship"
-            value={localForm.title}
-            onChange={(e) => handleChange("title", e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Type *</Label>
-          <select
-            className="w-full border border-input bg-background px-3 py-2 rounded-md outline-none"
-            value={localForm.type}
-            onChange={(e) => handleChange("type", e.target.value)}
-          >
-            <option value="internship">Internship</option>
-            <option value="siwes">SIWES</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label>Fee (₦) *</Label>
-          <Input
-            placeholder="e.g. 50000"
-            value={localForm.monthlyFee}
-            onChange={(e) => handleChange("monthlyFee", e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Duration (months) *</Label>
-          <Input
-            placeholder="e.g. 3"
-            value={localForm.durationMonths}
-            onChange={(e) => handleChange("durationMonths", e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Category</Label>
-          <Input
-            placeholder="e.g. Technology"
-            value={localForm.category}
-            onChange={(e) => handleChange("category", e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Description</Label>
-          <Input
-            placeholder="Brief description"
-            value={localForm.description}
-            onChange={(e) => handleChange("description", e.target.value)}
-          />
-        </div>
-        <Button
-          onClick={() => {
-            setForm(localForm);
-            onSubmit();
-          }}
-          className="md:col-span-2 h-11"
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saving...
-            </span>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -243,7 +231,6 @@ const AdminPrograms = () => {
           </Button>
         </div>
 
-        {/* Add Form */}
         {showAddForm && (
           <Card className="border-primary/20 shadow-lg">
             <CardHeader>
@@ -261,7 +248,6 @@ const AdminPrograms = () => {
           </Card>
         )}
 
-        {/* Programs List */}
         <div className="grid gap-4">
           {isLoading ? (
             <div className="flex justify-center py-20">
@@ -279,7 +265,6 @@ const AdminPrograms = () => {
               >
                 <CardContent className="p-6">
                   {editingId === program.id ? (
-                    // Edit Form
                     <div className="space-y-4">
                       <div className="flex justify-between items-center mb-2">
                         <h3 className="font-semibold">Editing: {program.title}</h3>
@@ -300,7 +285,6 @@ const AdminPrograms = () => {
                       />
                     </div>
                   ) : (
-                    // Display Mode
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <h3 className="font-semibold text-lg">{program.title}</h3>
