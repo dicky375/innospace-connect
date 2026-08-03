@@ -19,7 +19,6 @@ interface Program {
   durationMonths: number;
   category: string;
   isActive: boolean;
-  affiliateCommission: string;
 }
 
 const emptyForm = {
@@ -29,7 +28,6 @@ const emptyForm = {
   price: "",
   durationMonths: "",
   category: "",
-  affiliateCommission: "",
 };
 
 const ProgramForm = ({
@@ -78,7 +76,7 @@ const ProgramForm = ({
           onChange={(e) => handleChange("durationMonths", e.target.value)}
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 md:col-span-2">
         <Label>Price (₦) *</Label>
         <Input
           placeholder="e.g. 250000"
@@ -94,15 +92,6 @@ const ProgramForm = ({
           value={form.category}
           onChange={(e) => handleChange("category", e.target.value)}
         />
-      </div>
-      <div className="space-y-2">
-        <Label>Affiliate Commission (₦)</Label>
-        <Input
-          placeholder="e.g. 35000"
-          value={form.affiliateCommission}
-          onChange={(e) => handleChange("affiliateCommission", e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">Amount paid to affiliate per registration</p>
       </div>
       <div className="space-y-2 md:col-span-2">
         <Label>Description</Label>
@@ -199,7 +188,6 @@ const AdminPrograms = () => {
       ...newProgram,
       price: parseFloat(newProgram.price),
       durationMonths: parseInt(newProgram.durationMonths),
-      affiliateCommission: newProgram.affiliateCommission ? parseFloat(newProgram.affiliateCommission) : 35000,
     });
   };
 
@@ -212,7 +200,6 @@ const AdminPrograms = () => {
       price: program.price,
       durationMonths: program.durationMonths.toString(),
       category: program.category || "",
-      affiliateCommission: program.affiliateCommission || "",
     });
   };
 
@@ -227,7 +214,6 @@ const AdminPrograms = () => {
         ...editForm,
         price: parseFloat(editForm.price),
         durationMonths: parseInt(editForm.durationMonths),
-        affiliateCommission: editForm.affiliateCommission ? parseFloat(editForm.affiliateCommission) : 35000,
       },
     });
   };
@@ -311,8 +297,8 @@ const AdminPrograms = () => {
                           <p className="font-bold text-primary">
                             ₦{parseFloat(program.price).toLocaleString()}
                           </p>
-                          <p className="text-green-400 text-sm">
-                            Commission: ₦{parseFloat(program.affiliateCommission || "35000").toLocaleString()}
+                          <p className="text-xs text-muted-foreground">
+                            10% commission: ₦{(parseFloat(program.price) * 0.10).toLocaleString()}
                           </p>
                         </div>
                       </div>
