@@ -4,7 +4,6 @@ import {
   LayoutDashboard, Users, BookOpen, ClipboardCheck, Wallet, User, LogOut, Zap, Trophy, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import DarkModeToggle from "@/components/DarkModeToggle";
 
 const affiliateLinks = [
   { to: "/affiliate", icon: LayoutDashboard, label: "Overview" },
@@ -23,28 +22,24 @@ const adminLinks = [
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
-const userLinks = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "My Programs" },
-  { to: "/dashboard/profile", icon: User, label: "Profile" },
-];
-
-const DashboardSidebar = () => {
+const MobileSidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const links = user?.role === "admin" ? adminLinks : user?.role === "affiliate" ? affiliateLinks : userLinks;
+  const links = user?.role === "admin" ? adminLinks : user?.role === "affiliate" ? affiliateLinks : [];
+
+  if (!user) return null;
 
   return (
-    // ✅ Hidden on mobile, visible on desktop
-    <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex-col z-40">
-      {/* Logo */}
-      <div className="p-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
             <Zap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold text-sidebar-foreground">InnoSpaceX</span>
-        </Link>
+          <span className="text-lg font-bold">InnoSpaceX</span>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -56,13 +51,13 @@ const DashboardSidebar = () => {
               key={link.to}
               to={link.to}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-min",
                 active
-                  ? "gradient-primary text-primary-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               )}
             >
-              <link.icon className="h-4 w-4" />
+              <link.icon className="h-5 w-5" />
               {link.label}
             </Link>
           );
@@ -70,35 +65,29 @@ const DashboardSidebar = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-3 border-t border-sidebar-border space-y-3">
-        {/* Theme Toggle */}
-        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-sidebar-accent/50">
-          <span className="text-sm text-sidebar-foreground/70">Theme</span>
-          <DarkModeToggle />
-        </div>
-
+      <div className="p-4 border-t border-border space-y-3">
         {/* User Info */}
-        <div className="flex items-center gap-3 px-3 py-2">
-          <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary/50">
+          <div className="h-10 w-10 rounded-full gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground">
             {user?.name?.charAt(0) || "U"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.name}</p>
-            <p className="text-xs text-sidebar-foreground/50 capitalize">{user?.role}</p>
+            <p className="font-medium truncate">{user?.name}</p>
+            <p className="text-xs text-muted-foreground capitalize">{user?.email}</p>
           </div>
         </div>
 
         {/* Logout */}
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full touch-min"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5" />
           Logout
         </button>
       </div>
-    </aside>
+    </div>
   );
 };
 
-export default DashboardSidebar;
+export default MobileSidebar;
