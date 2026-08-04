@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserPlus, Loader2 } from "lucide-react";
+import { UserPlus, Loader2, Upload, File, X } from "lucide-react";
+import { useDropzone } from "react-dropzone";
 import PaymentModal from "@/components/PaymentModal";
 
 const RegisterStudent = () => {
@@ -25,6 +26,8 @@ const RegisterStudent = () => {
     hodName: "",
     supervisorName: "",
   });
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [registrationId, setRegistrationId] = useState("");
   const [amount, setAmount] = useState(0);
@@ -42,6 +45,34 @@ const RegisterStudent = () => {
 
   const programs = programsData?.programs || [];
 
+  // File dropzone configuration
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+    onDrop: (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        const error = rejectedFiles[0].errors[0];
+        if (error.code === 'file-too-large') {
+          setFileError('File is too large. Max size is 10MB.');
+        } else if (error.code === 'file-invalid-type') {
+          setFileError('Invalid file type. Only PDF, DOC, DOCX, JPG, PNG allowed.');
+        } else {
+          setFileError(error.message || 'Invalid file');
+        }
+        setFile(null);
+        return;
+      }
+      setFileError(null);
+      setFile(acceptedFiles[0]);
+    },
+  });
+
   const registerMutation = useMutation({
     mutationFn: async (data: typeof form) => {
       const formData = new FormData();
@@ -50,8 +81,11 @@ const RegisterStudent = () => {
           formData.append(key, data[key as keyof typeof form]);
         }
       });
+      if (file) {
+        formData.append('siwesForm', file);
+      }
       const { data: response } = await api.post(REGISTRATIONS, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response;
     },
@@ -60,7 +94,6 @@ const RegisterStudent = () => {
       
       toast.success("Student registered! Waiting for admin approval.");
       
-      // Try different ways to get registration data
       const registration = data?.registration || data?.data?.registration || data;
       
       console.log("[RegisterStudent] Registration object:", registration);
@@ -77,7 +110,6 @@ const RegisterStudent = () => {
         console.log("[RegisterStudent] Response structure:", Object.keys(data));
       }
       
-      // Reset form
       setForm({
         programId: "",
         studentName: "",
@@ -89,6 +121,7 @@ const RegisterStudent = () => {
         hodName: "",
         supervisorName: "",
       });
+      setFile(null);
     },
     onError: (err: any) => {
       console.error("[RegisterStudent] Error:", err);
@@ -241,6 +274,63 @@ const RegisterStudent = () => {
                     onChange={(e) => update("supervisorName", e.target.value)}
                     placeholder="Mr. Johnson"
                   />
+                </div>
+
+                {/* ✅ FILE UPLOAD SECTION */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>SIWES Form (Optional)</Label>
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                      isDragActive
+                        ? "border-primary bg-primary/10"
+                        : file
+                        ? "border-green-500 bg-green-500/10"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <input {...getInputProps()} />
+                    {file ? (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <File className="h-8 w-8 text-primary" />
+                          <div className="text-left">
+                            <p className="font-medium truncate max-w-[200px]">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFile(null);
+                            setFileError(null);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload className="h-10 w-10 mx-auto text-muted-foreground/50" />
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {isDragActive
+                            ? "Drop the file here..."
+                            : "Drag & drop your SIWES form, or click to browse"}
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {fileError && (
+                    <p className="text-sm text-destructive mt-1">{fileError}</p>
+                  )}
                 </div>
               </div>
 
