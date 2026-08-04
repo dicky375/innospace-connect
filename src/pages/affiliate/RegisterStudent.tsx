@@ -20,6 +20,7 @@ const RegisterStudent = () => {
     studentName: "",
     studentPhone: "",
     studentEmail: "",
+    schoolName: "", // ✅ New field
     course: "",
     department: "",
     regNumber: "",
@@ -45,7 +46,7 @@ const RegisterStudent = () => {
 
   const programs = programsData?.programs || [];
 
-  // ✅ File dropzone configuration
+  // File dropzone configuration
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'application/pdf': ['.pdf'],
@@ -54,7 +55,7 @@ const RegisterStudent = () => {
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png'],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 10 * 1024 * 1024,
     onDrop: (acceptedFiles, rejectedFiles) => {
       if (rejectedFiles.length > 0) {
         const error = rejectedFiles[0].errors[0];
@@ -75,7 +76,6 @@ const RegisterStudent = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (data: typeof form) => {
-      // ✅ Validate file exists before submitting
       if (!file) {
         throw new Error('Please upload a SIWES form');
       }
@@ -120,6 +120,7 @@ const RegisterStudent = () => {
         studentName: "",
         studentPhone: "",
         studentEmail: "",
+        schoolName: "",
         course: "",
         department: "",
         regNumber: "",
@@ -137,13 +138,11 @@ const RegisterStudent = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // ✅ Validate required fields
     if (!form.programId || !form.studentName || !form.studentPhone || !form.course || !form.department || !form.regNumber) {
       toast.error("Please fill in all required fields");
       return;
     }
     
-    // ✅ Validate file is uploaded
     if (!file) {
       toast.error("Please upload a SIWES form (PDF, DOC, DOCX, JPG, PNG)");
       setFileError("SIWES form is required");
@@ -243,6 +242,18 @@ const RegisterStudent = () => {
                   />
                 </div>
 
+                {/* ✅ NEW: School Name Field */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>School / Institution Name *</Label>
+                  <Input
+                    value={form.schoolName}
+                    onChange={(e) => update("schoolName", e.target.value)}
+                    placeholder="e.g. University of Lagos"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Name of the student's school or institution</p>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Course *</Label>
                   <Input
@@ -291,7 +302,7 @@ const RegisterStudent = () => {
                   />
                 </div>
 
-                {/* ✅ REQUIRED FILE UPLOAD SECTION */}
+                {/* File Upload Section */}
                 <div className="space-y-2 md:col-span-2">
                   <Label className="flex items-center gap-1">
                     SIWES Form <span className="text-destructive">*</span>
@@ -375,7 +386,6 @@ const RegisterStudent = () => {
         </Card>
       </div>
 
-      {/* Payment Modal */}
       <PaymentModal
         open={showPayment}
         onOpenChange={setShowPayment}
