@@ -14,6 +14,7 @@ const AdminApprovals = () => {
     queryKey: ["pending-registrations"],
     queryFn: async () => {
       const { data } = await api.get(`${REGISTRATIONS}/pending`);
+      console.log('[AdminApprovals] Pending data:', data); // Debug log
       return data;
     },
   });
@@ -115,6 +116,25 @@ const AdminApprovals = () => {
                       </p>
                     </div>
 
+                    {/* ✅ AFFILIATE NAME - NEW SECTION */}
+                    <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                        Referred By
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-primary" />
+                        <p className="font-semibold text-primary">
+                          {r.affiliate?.name || "Unknown Affiliate"}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {r.affiliate?.email || ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Affiliate ID: {r.affiliate?.id?.slice(0, 8) || "N/A"}...
+                      </p>
+                    </div>
+
                     <div>
                       <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                         Commission (10%)
@@ -122,6 +142,9 @@ const AdminApprovals = () => {
                       <p className="text-2xl font-bold text-green-400">
                         ₦{(Number(r.amount) * 0.1).toLocaleString()}
                       </p>
+                      {r.Program?.type === 'siwes' && (
+                        <p className="text-xs text-muted-foreground">SIWES - No commission</p>
+                      )}
                     </div>
 
                     <div>
@@ -142,7 +165,7 @@ const AdminApprovals = () => {
                   {r.siwesFormName && (
                     <div className="mt-4 pt-4 border-t border-border">
                       <a
-                        href={`http://localhost:3000/reg/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`}
+                        href={`https://innospace.onrender.com/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`}
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 text-primary hover:underline"
                       >
