@@ -59,3 +59,205 @@
     background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
   }
 }
+
+/* ===== MOBILE-FIRST UTILITIES ===== */
+@layer utilities {
+  /* ===== Mobile Safe Areas ===== */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* ===== Mobile Touch Targets ===== */
+  .touch-min {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ===== Mobile Responsive Typography ===== */
+  @media (max-width: 480px) {
+    .text-responsive {
+      font-size: clamp(0.875rem, 4vw, 1rem);
+    }
+    .heading-responsive {
+      font-size: clamp(1.25rem, 6vw, 1.875rem);
+    }
+    .subheading-responsive {
+      font-size: clamp(1rem, 4.5vw, 1.25rem);
+    }
+  }
+
+  /* ===== Mobile Card Styles ===== */
+  .card-mobile {
+    @apply rounded-lg p-4 md:p-6;
+  }
+
+  /* ===== Mobile Table Styles ===== */
+  .table-mobile {
+    @apply block overflow-x-auto whitespace-nowrap;
+  }
+
+  /* ===== Mobile Container ===== */
+  .container-mobile {
+    @apply px-4 mx-auto max-w-7xl sm:px-6 lg:px-8;
+  }
+
+  /* ===== Mobile Bottom Navigation ===== */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-background border-t border-border z-40 flex items-center justify-around h-16 safe-bottom;
+  }
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-primary touch-min;
+  }
+  .bottom-nav-item.active {
+    @apply text-primary;
+  }
+  .bottom-nav-item svg {
+    @apply h-5 w-5;
+  }
+
+  /* ===== Mobile Filters ===== */
+  .filter-chip {
+    @apply px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer touch-min;
+  }
+  .filter-chip.active {
+    @apply bg-primary text-primary-foreground;
+  }
+  .filter-chip.inactive {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  /* ===== Loading Spinner ===== */
+  .loading-spinner {
+    @apply animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full;
+  }
+
+  /* ===== Glass Morphism Mobile ===== */
+  @media (max-width: 640px) {
+    .glass-mobile {
+      @apply bg-card/80 backdrop-blur-sm border border-border rounded-lg;
+    }
+  }
+
+  /* ===== Responsive Grid ===== */
+  .grid-mobile {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+}
+
+/* ===== RESPONSIVE TABLES ===== */
+@media (max-width: 768px) {
+  .responsive-table {
+    @apply block;
+  }
+  .responsive-table thead {
+    @apply hidden;
+  }
+  .responsive-table tbody {
+    @apply block;
+  }
+  .responsive-table tr {
+    @apply block mb-4 border border-border rounded-lg p-4;
+  }
+  .responsive-table td {
+    @apply block py-2 px-0;
+  }
+  .responsive-table td::before {
+    content: attr(data-label);
+    @apply font-semibold inline-block w-1/2 text-muted-foreground;
+  }
+}
+
+/* ===== RESPONSIVE GRID ===== */
+@media (max-width: 640px) {
+  .responsive-grid {
+    @apply grid grid-cols-1 gap-4;
+  }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+  .responsive-grid {
+    @apply grid grid-cols-2 gap-4;
+  }
+}
+@media (min-width: 1025px) {
+  .responsive-grid {
+    @apply grid grid-cols-3 gap-6;
+  }
+}
+
+/* ===== RESPONSIVE SIDEBAR ===== */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    @apply fixed inset-0 bg-black/50 z-40;
+  }
+  .sidebar-mobile {
+    @apply fixed top-0 left-0 h-full w-64 bg-background z-50 transform transition-transform duration-300 ease-in-out shadow-2xl;
+  }
+  .sidebar-mobile.closed {
+    @apply -translate-x-full;
+  }
+  .sidebar-mobile.open {
+    @apply translate-x-0;
+  }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}

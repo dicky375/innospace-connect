@@ -18,6 +18,35 @@ export default {
       },
     },
     extend: {
+      // ✅ Mobile-First Breakpoints
+      screens: {
+        'xs': '375px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+        'mobile': {'max': '767px'},
+        'tablet': {'min': '768px', 'max': '1023px'},
+        'desktop': {'min': '1024px'},
+      },
+      // ✅ Safe Area Support for Notched Phones
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
+      },
+      // ✅ Dynamic Viewport Height
+      minHeight: {
+        'screen-safe': '100dvh',
+      },
+      // ✅ Max Widths
+      maxWidth: {
+        '8xl': '88rem',
+        '9xl': '96rem',
+      },
+      // ✅ Colors
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -68,6 +97,7 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      // ✅ Animations
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -77,12 +107,41 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // ✅ Mobile Animations
+        "slide-up": {
+          from: { transform: "translateY(100%)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
+        "slide-down": {
+          from: { transform: "translateY(-100%)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "scale-in": {
+          from: { transform: "scale(0.9)", opacity: "0" },
+          to: { transform: "scale(1)", opacity: "1" },
+        },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "slide-up": "slide-up 0.3s ease-out forwards",
+        "slide-down": "slide-down 0.3s ease-out forwards",
+        "fade-in": "fade-in 0.3s ease-out forwards",
+        "scale-in": "scale-in 0.3s ease-out forwards",
+        "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+  ],
 } satisfies Config;
