@@ -20,7 +20,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Menu className="h-6 w-6" />
         </Button>
-        <span className="text-lg font-bold">InnoSpace</span>
+        <span className="text-lg font-bold">InnoSpaceX</span>
         <div className="w-10" /> {/* Spacer */}
       </header>
 
