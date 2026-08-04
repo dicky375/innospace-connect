@@ -45,7 +45,7 @@ const RegisterStudent = () => {
 
   const programs = programsData?.programs || [];
 
-  // File dropzone configuration
+  // ✅ File dropzone configuration
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'application/pdf': ['.pdf'],
@@ -75,6 +75,11 @@ const RegisterStudent = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (data: typeof form) => {
+      // ✅ Validate file exists before submitting
+      if (!file) {
+        throw new Error('Please upload a SIWES form');
+      }
+
       const formData = new FormData();
       Object.keys(data).forEach((key) => {
         if (data[key as keyof typeof form]) {
@@ -125,16 +130,26 @@ const RegisterStudent = () => {
     },
     onError: (err: any) => {
       console.error("[RegisterStudent] Error:", err);
-      toast.error(err?.response?.data?.error || "Failed to register student");
+      toast.error(err?.response?.data?.error || err?.message || "Failed to register student");
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // ✅ Validate required fields
     if (!form.programId || !form.studentName || !form.studentPhone || !form.course || !form.department || !form.regNumber) {
       toast.error("Please fill in all required fields");
       return;
     }
+    
+    // ✅ Validate file is uploaded
+    if (!file) {
+      toast.error("Please upload a SIWES form (PDF, DOC, DOCX, JPG, PNG)");
+      setFileError("SIWES form is required");
+      return;
+    }
+    
     registerMutation.mutate(form);
   };
 
@@ -276,9 +291,11 @@ const RegisterStudent = () => {
                   />
                 </div>
 
-                {/* ✅ FILE UPLOAD SECTION */}
+                {/* ✅ REQUIRED FILE UPLOAD SECTION */}
                 <div className="space-y-2 md:col-span-2">
-                  <Label>SIWES Form (Optional)</Label>
+                  <Label className="flex items-center gap-1">
+                    SIWES Form <span className="text-destructive">*</span>
+                  </Label>
                   <div
                     {...getRootProps()}
                     className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
@@ -286,6 +303,8 @@ const RegisterStudent = () => {
                         ? "border-primary bg-primary/10"
                         : file
                         ? "border-green-500 bg-green-500/10"
+                        : fileError || file === null
+                        ? "border-destructive/50 bg-destructive/5 hover:border-destructive"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
@@ -323,7 +342,7 @@ const RegisterStudent = () => {
                             : "Drag & drop your SIWES form, or click to browse"}
                         </p>
                         <p className="text-xs text-muted-foreground/70 mt-1">
-                          PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                          PDF, DOC, DOCX, JPG, PNG (Max 10MB) <span className="text-destructive">*</span>
                         </p>
                       </div>
                     )}
