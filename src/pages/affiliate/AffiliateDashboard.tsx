@@ -12,34 +12,48 @@ const statusColors: Record<string, string> = {
   paid: "bg-green-500/20 text-green-400",
   approved: "bg-blue-500/20 text-blue-400",
   pending_approval: "bg-yellow-500/20 text-yellow-400",
-  rejected: "bg-destructive/20 text-destructive",
-  cancelled: "bg-muted/20 text-muted-foreground",
+  rejected: "bg-red-500/20 text-red-500",
+  cancelled: "bg-gray-500/20 text-gray-400",
+};
+
+const statusLabels: Record<string, string> = {
+  paid: "Paid",
+  approved: "Approved",
+  pending_approval: "Pending",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
 };
 
 const AffiliateDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // ✅ Fetch affiliate stats
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["affiliate-stats"],
     queryFn: async () => {
       const { data } = await api.get(`${REGISTRATIONS}/my/stats`);
+      console.log("[AffiliateDashboard] Stats:", data);
       return data;
     },
   });
 
+  // ✅ Fetch balance
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ["affiliate-balance"],
     queryFn: async () => {
       const { data } = await api.get(`${COMMISSIONS}/balance`);
+      console.log("[AffiliateDashboard] Balance:", data);
       return data;
     },
   });
 
+  // ✅ Fetch recent registrations - FIXED: use data.registrations
   const { data: recentData, isLoading: recentLoading } = useQuery({
     queryKey: ["recent-registrations"],
     queryFn: async () => {
-      const { data } = await api.get(`${REGISTRATIONS}/my?limit=5`);
+      const { data } = await api.get(`${REGISTRATIONS}/my`);
+      console.log("[AffiliateDashboard] Recent registrations:", data);
       return data;
     },
   });
@@ -56,7 +70,13 @@ const AffiliateDashboard = () => {
     );
   }
 
-  const recent = Array.isArray(recentData) ? recentData.slice(0, 5) : [];
+  // ✅ Fixed: Extract registrations from data object
+  const registrations = recentData?.registrations || [];
+  const recent = registrations.slice(0, 5);
+
+  // ✅ Get stats from the stats object
+  const statsData = stats?.stats || {};
+  const balanceAmount = parseFloat(balance?.balance || "0");
 
   return (
     <DashboardLayout>
@@ -76,24 +96,24 @@ const AffiliateDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Registrations"
-            value={stats?.total || 0}
+            value={statsData.total || 0}
             icon={Users}
             variant="primary"
           />
           <StatCard
             title="Approved"
-            value={stats?.approved || 0}
+            value={statsData.approved || 0}
             icon={Award}
             variant="accent"
           />
           <StatCard
             title="Pending"
-            value={stats?.pending || 0}
+            value={statsData.pending || 0}
             icon={Users}
           />
           <StatCard
             title="Wallet Balance"
-            value={`₦${parseFloat(balance?.balance || "0").toLocaleString()}`}
+            value={`₦${balanceAmount.toLocaleString()}`}
             icon={Wallet}
             variant="primary"
           />
@@ -123,8 +143,7 @@ const AffiliateDashboard = () => {
                       <div>
                         <p className="font-medium">{reg.studentName}</p>
                         <p className="text-sm text-muted-foreground">
-                          {reg.Program?.title || "—"} •{" "}
-                          {reg.regNumber}
+                          {reg.Program?.title || "—"} • {reg.regNumber}
                         </p>
                       </div>
                     </div>
@@ -137,7 +156,7 @@ const AffiliateDashboard = () => {
                           statusColors[reg.status] || ""
                         }`}
                       >
-                        {reg.status.replace("_", " ")}
+                        {statusLabels[reg.status] || reg.status}
                       </span>
                     </div>
                   </div>
