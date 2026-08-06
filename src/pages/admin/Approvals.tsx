@@ -21,16 +21,38 @@ const AdminApprovals = () => {
 
   const pending = data?.registrations || [];
 
-  // ✅ File view handler
-  const handleViewFile = (registrationId) => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      toast.error('Please login again');
-      return;
+  
+//  NEW - using Authorization header (open in new tab with fetch)
+const handleViewFile = async (registrationId: string) => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) {
+    toast.error('Please login again');
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://innospace.onrender.com/api/registrations/file/${registrationId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+
+    if (response.ok) {
+      // Redirect to the file URL
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } else {
+      const error = await response.json();
+      toast.error(error.error || 'Failed to open file');
     }
-    const url = `https://innospace.onrender.com/api/registrations/file/${registrationId}?token=${encodeURIComponent(token)}`;
-    window.open(url, '_blank');
-  };
+  } catch (err) {
+    toast.error('Failed to open file');
+  }
+};
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) =>
