@@ -14,12 +14,23 @@ const AdminApprovals = () => {
     queryKey: ["pending-registrations"],
     queryFn: async () => {
       const { data } = await api.get(`${REGISTRATIONS}/pending`);
-      console.log('[AdminApprovals] Pending data:', data); // Debug log
+      console.log('[AdminApprovals] Pending data:', data);
       return data;
     },
   });
 
   const pending = data?.registrations || [];
+
+  // ✅ File view handler
+  const handleViewFile = (registrationId) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      toast.error('Please login again');
+      return;
+    }
+    const url = `https://innospace.onrender.com/api/registrations/file/${registrationId}?token=${encodeURIComponent(token)}`;
+    window.open(url, '_blank');
+  };
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) =>
@@ -116,7 +127,6 @@ const AdminApprovals = () => {
                       </p>
                     </div>
 
-                    {/* ✅ AFFILIATE NAME - NEW SECTION */}
                     <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
                       <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                         Referred By
@@ -164,14 +174,13 @@ const AdminApprovals = () => {
 
                   {r.siwesFormName && (
                     <div className="mt-4 pt-4 border-t border-border">
-                      <a
-                        href={`https://innospace.onrender.com/api/registrations/file/${r.id}?token=${localStorage.getItem('accessToken')}`}
-                        rel="noreferrer"
+                      <button
+                        onClick={() => handleViewFile(r.id)}
                         className="inline-flex items-center gap-2 text-primary hover:underline"
                       >
                         <FileText className="h-4 w-4" />
                         View Uploaded SIWES Form
-                      </a>
+                      </button>
                     </div>
                   )}
 
