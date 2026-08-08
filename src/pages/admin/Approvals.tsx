@@ -39,45 +39,15 @@ const AdminApprovals = () => {
     return { rate, amount, isSiwes: false };
   };
 
-  // ✅ File view handler - gets URL from registration then opens it
-  const handleViewFile = async (registrationId: string) => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      toast.error('Please login again');
+  // ✅ SIMPLIFIED: Open file directly
+  const handleViewFile = (fileUrl: string) => {
+    if (!fileUrl) {
+      toast.error('No file available');
       return;
     }
 
-    try {
-      // First, get the registration to get the file URL
-      const response = await fetch(
-        `https://innospace.onrender.com/api/registrations/${registrationId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        toast.error('Failed to get file information');
-        return;
-      }
-
-      const data = await response.json();
-      const fileUrl = data.registration?.siwesFormPath;
-
-      if (!fileUrl) {
-        toast.error('No file attached to this registration');
-        return;
-      }
-
-      // ✅ Open the URL directly - no fetch needed!
-      window.open(fileUrl, '_blank');
-      
-    } catch (err) {
-      console.error('[ViewFile] Error:', err);
-      toast.error('Failed to open file');
-    }
+    // Open the URL directly in a new tab
+    window.open(fileUrl, '_blank');
   };
 
   // ✅ Approve mutation
@@ -241,11 +211,11 @@ const AdminApprovals = () => {
                       </div>
                     </div>
 
-                    {/* File Upload Section */}
+                    {/* ✅ File Upload Section - Updated */}
                     {r.siwesFormName && (
                       <div className="mt-4 pt-4 border-t border-border">
                         <button
-                          onClick={() => handleViewFile(r.id)}
+                          onClick={() => handleViewFile(r.siwesFormPath)}
                           className="inline-flex items-center gap-2 text-primary hover:underline"
                         >
                           <FileText className="h-4 w-4" />
