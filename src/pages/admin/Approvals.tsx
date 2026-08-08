@@ -39,16 +39,37 @@ const AdminApprovals = () => {
     return { rate, amount, isSiwes: false };
   };
 
-  // ✅ SIMPLIFIED: Open file directly
-  const handleViewFile = (fileUrl: string) => {
-    if (!fileUrl) {
-      toast.error('No file available');
-      return;
-    }
+const handleViewFile = (fileUrl: string, fileName: string) => {
+  if (!fileUrl) {
+    toast.error('No file available');
+    return;
+  }
 
-    // Open the URL directly in a new tab
+  // Determine file type
+  const extension = fileName?.toLowerCase().split('.').pop() || '';
+  
+  // PDFs - open directly
+  if (extension === 'pdf') {
     window.open(fileUrl, '_blank');
-  };
+    return;
+  }
+  
+  // Images - open directly
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+    window.open(fileUrl, '_blank');
+    return;
+  }
+  
+  // Office files (DOCX, DOC, XLSX, PPTX) - use Google Docs Viewer
+  if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    window.open(viewerUrl, '_blank');
+    return;
+  }
+  
+  // Fallback - open directly
+  window.open(fileUrl, '_blank');
+};
 
   // ✅ Approve mutation
   const approveMutation = useMutation({
