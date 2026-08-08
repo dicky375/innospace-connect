@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/pages/affiliate/CommissionCalculator.tsx
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api, { PROGRAMS } from "@/lib/api";
@@ -7,13 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users } from "lucide-react";
+import { Calculator, Users, Info } from "lucide-react";
 
 const CommissionCalculator = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState(5);
   const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [commissionRate, setCommissionRate] = useState(10); // Default fallback
 
+  // Fetch programs
   const { data: programsData } = useQuery({
     queryKey: ["programs"],
     queryFn: async () => {
@@ -22,10 +25,28 @@ const CommissionCalculator = () => {
     },
   });
 
+  // ✅ Fetch commission rate from settings
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/settings");
+      return data;
+    },
+  });
+
+  // Update commission rate when settings change
+  useEffect(() => {
+    if (settingsData?.settings?.commission_rate) {
+      setCommissionRate(parseFloat(settingsData.settings.commission_rate));
+    }
+  }, [settingsData]);
+
   const programs = programsData?.programs || programsData || [];
   const selectedProgram = programs.find((p: any) => p.id === selectedProgramId);
-  const fee = selectedProgram ? parseFloat(selectedProgram.monthlyFee) : 0;
-  const commissionPerStudent = fee * 0.1;
+  
+  // ✅ Use dynamic commission rate from settings
+  const fee = selectedProgram ? parseFloat(selectedProgram.price || selectedProgram.monthlyFee || 0) : 0;
+  const commissionPerStudent = fee * (commissionRate / 100);
   const totalCommission = students * commissionPerStudent;
 
   return (
@@ -41,6 +62,11 @@ const CommissionCalculator = () => {
           <p className="text-muted-foreground mt-2">
             Estimate how much you can earn as an affiliate
           </p>
+          {/* ✅ Show current commission rate */}
+          <div className="mt-2 inline-flex items-center gap-2 bg-muted/50 px-4 py-1.5 rounded-full text-sm">
+            <Info className="h-4 w-4" />
+            Current commission rate: <span className="font-bold">{commissionRate}%</span>
+          </div>
         </div>
 
         <Card className="glass">
@@ -89,26 +115,29 @@ const CommissionCalculator = () => {
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {programs.map((p: any) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedProgramId(p.id)}
-                      className={`p-4 rounded-xl border text-left transition-all ${
-                        selectedProgramId === p.id
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <p className="font-medium">{p.title}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {p.type} • {p.durationMonths} months
-                      </p>
-                      <p className="text-green-400 font-semibold mt-1">
-                        ₦{(parseFloat(p.monthlyFee) * 0.1).toLocaleString()}{" "}
-                        commission per student
-                      </p>
-                    </button>
-                  ))}
+                  {programs.map((p: any) => {
+                    const programFee = parseFloat(p.price || p.monthlyFee || 0);
+                    const programCommission = programFee * (commissionRate / 100);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedProgramId(p.id)}
+                        className={`p-4 rounded-xl border text-left transition-all ${
+                          selectedProgramId === p.id
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <p className="font-medium">{p.title}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {p.type} • {p.durationMonths} months
+                        </p>
+                        <p className="text-green-400 font-semibold mt-1">
+                          ₦{programCommission.toLocaleString()} commission per student
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -128,7 +157,7 @@ const CommissionCalculator = () => {
 
                 <div className="h-px bg-border my-6" />
 
-                <div className="grid grid-cols-2 gap-6 text-left">
+                <div className="grid grid-cols-3 gap-4 text-left">
                   <div>
                     <p className="text-sm text-muted-foreground">Per Student</p>
                     <p className="text-2xl font-semibold">
@@ -139,6 +168,12 @@ const CommissionCalculator = () => {
                     <p className="text-sm text-muted-foreground">Program Fee</p>
                     <p className="text-2xl font-semibold">
                       ₦{fee.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Rate</p>
+                    <p className="text-2xl font-semibold">
+                      {commissionRate}%
                     </p>
                   </div>
                 </div>
@@ -156,8 +191,7 @@ const CommissionCalculator = () => {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          * Commission is 10% of program fee, paid after admin approval and
-          student payment.
+          * Commission is {commissionRate}% of program fee, paid after admin approval and student payment.
         </p>
       </div>
     </DashboardLayout>
