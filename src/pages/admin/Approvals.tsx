@@ -21,38 +21,36 @@ const AdminApprovals = () => {
 
   const pending = data?.registrations || [];
 
-  
-//  NEW - using Authorization header (open in new tab with fetch)
-const handleViewFile = async (registrationId: string) => {
-  const token = localStorage.getItem('accessToken');
-  if (!token) {
-    toast.error('Please login again');
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://innospace.onrender.com/api/registrations/file/${registrationId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    );
-
-    if (response.ok) {
-      // Redirect to the file URL
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    } else {
-      const error = await response.json();
-      toast.error(error.error || 'Failed to open file');
+  // ✅ File view handler
+  const handleViewFile = async (registrationId: string) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      toast.error('Please login again');
+      return;
     }
-  } catch (err) {
-    toast.error('Failed to open file');
-  }
-};
+
+    try {
+      const response = await fetch(
+        `https://innospace.onrender.com/api/registrations/file/${registrationId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to open file');
+      }
+    } catch (err) {
+      toast.error('Failed to open file');
+    }
+  };
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) =>
@@ -81,6 +79,23 @@ const handleViewFile = async (registrationId: string) => {
       toast.error(err?.response?.data?.error || "Failed to reject registration");
     },
   });
+
+  // ✅ Calculate commission based on program's commission rate
+  const calculateCommission = (registration: any) => {
+    // If program is SIWES type, no commission
+    if (registration.Program?.type === 'siwes') {
+      return { rate: 0, amount: 0, isSiwes: true };
+    }
+
+    // Get commission rate from program (default to 10% if not set)
+    const rate = registration.Program?.commissionRate 
+      ? parseFloat(registration.Program.commissionRate) 
+      : 10;
+    
+    const amount = (Number(registration.amount) * rate) / 100;
+    
+    return { rate, amount, isSiwes: false };
+  };
 
   return (
     <DashboardLayout>
@@ -111,122 +126,134 @@ const handleViewFile = async (registrationId: string) => {
             </div>
           ) : (
             <div className="space-y-6">
-              {pending.map((r: any) => (
-                <div
-                  key={r.id}
-                  className="border border-border rounded-xl p-6 hover:border-primary/50 transition-all"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        Student
-                      </p>
-                      <p className="font-semibold text-lg">{r.studentName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {r.studentEmail}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {r.studentPhone}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        Academic Details
-                      </p>
-                      <p className="font-medium">{r.regNumber}</p>
-                      <p>{r.department}</p>
-                      <p className="text-sm text-muted-foreground">{r.course}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        Program
-                      </p>
-                      <p className="font-medium">{r.Program?.title || "—"}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {r.Program?.type}
-                      </p>
-                    </div>
-
-                    <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        Referred By
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary" />
-                        <p className="font-semibold text-primary">
-                          {r.affiliate?.name || "Unknown Affiliate"}
+              {pending.map((r: any) => {
+                const { rate, amount, isSiwes } = calculateCommission(r);
+                
+                return (
+                  <div
+                    key={r.id}
+                    className="border border-border rounded-xl p-6 hover:border-primary/50 transition-all"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          Student
+                        </p>
+                        <p className="font-semibold text-lg">{r.studentName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {r.studentEmail}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {r.studentPhone}
                         </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {r.affiliate?.email || ""}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Affiliate ID: {r.affiliate?.id?.slice(0, 8) || "N/A"}...
-                      </p>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          Academic Details
+                        </p>
+                        <p className="font-medium">{r.regNumber}</p>
+                        <p>{r.department}</p>
+                        <p className="text-sm text-muted-foreground">{r.course}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          Program
+                        </p>
+                        <p className="font-medium">{r.Program?.title || "—"}</p>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {r.Program?.type}
+                        </p>
+                        {/* ✅ Show commission rate on program card */}
+                        {!isSiwes && (
+                          <p className="text-xs text-primary mt-1">
+                            Commission Rate: {rate}%
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          Referred By
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-primary" />
+                          <p className="font-semibold text-primary">
+                            {r.affiliate?.name || "Unknown Affiliate"}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {r.affiliate?.email || ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Affiliate ID: {r.affiliate?.id?.slice(0, 8) || "N/A"}...
+                        </p>
+                      </div>
+
+                      {/* ✅ Dynamic Commission Display */}
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          Commission ({rate}%)
+                        </p>
+                        {isSiwes ? (
+                          <p className="text-sm text-muted-foreground">SIWES - No commission</p>
+                        ) : (
+                          <p className="text-2xl font-bold text-green-400">
+                            ₦{amount.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          HOD
+                        </p>
+                        <p>{r.hodName}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
+                          Supervisor
+                        </p>
+                        <p>{r.supervisorName}</p>
+                      </div>
                     </div>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        Commission (10%)
-                      </p>
-                      <p className="text-2xl font-bold text-green-400">
-                        ₦{(Number(r.amount) * 0.1).toLocaleString()}
-                      </p>
-                      {r.Program?.type === 'siwes' && (
-                        <p className="text-xs text-muted-foreground">SIWES - No commission</p>
-                      )}
-                    </div>
+                    {r.siwesFormName && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <button
+                          onClick={() => handleViewFile(r.id)}
+                          className="inline-flex items-center gap-2 text-primary hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          View Uploaded SIWES Form
+                        </button>
+                      </div>
+                    )}
 
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        HOD
-                      </p>
-                      <p>{r.hodName}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                        Supervisor
-                      </p>
-                      <p>{r.supervisorName}</p>
-                    </div>
-                  </div>
-
-                  {r.siwesFormName && (
-                    <div className="mt-4 pt-4 border-t border-border">
-                      <button
-                        onClick={() => handleViewFile(r.id)}
-                        className="inline-flex items-center gap-2 text-primary hover:underline"
+                    <div className="flex gap-3 mt-6">
+                      <Button
+                        onClick={() => approveMutation.mutate(r.id)}
+                        disabled={approveMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700 flex-1 md:flex-none"
                       >
-                        <FileText className="h-4 w-4" />
-                        View Uploaded SIWES Form
-                      </button>
+                        <Check className="mr-2 h-4 w-4" />
+                        Approve & Assign Commission
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        onClick={() => rejectMutation.mutate({ id: r.id })}
+                        disabled={rejectMutation.isPending}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Reject
+                      </Button>
                     </div>
-                  )}
-
-                  <div className="flex gap-3 mt-6">
-                    <Button
-                      onClick={() => approveMutation.mutate(r.id)}
-                      disabled={approveMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700 flex-1 md:flex-none"
-                    >
-                      <Check className="mr-2 h-4 w-4" />
-                      Approve & Assign Commission
-                    </Button>
-
-                    <Button
-                      variant="destructive"
-                      onClick={() => rejectMutation.mutate({ id: r.id })}
-                      disabled={rejectMutation.isPending}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Reject
-                    </Button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
