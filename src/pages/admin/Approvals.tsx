@@ -39,36 +39,23 @@ const AdminApprovals = () => {
     return { rate, amount, isSiwes: false };
   };
 
+// src/pages/admin/Approvals.tsx
+
 const handleViewFile = (fileUrl: string, fileName: string) => {
   if (!fileUrl) {
     toast.error('No file available');
     return;
   }
 
-  // Determine file type
   const extension = fileName?.toLowerCase().split('.').pop() || '';
   
-  // PDFs - open directly
-  if (extension === 'pdf') {
-    window.open(fileUrl, '_blank');
-    return;
-  }
+  // ✅ For all files, add fl_attachment=0 to force inline display
+  const displayUrl = fileUrl.includes('?') 
+    ? `${fileUrl}&fl_attachment=0` 
+    : `${fileUrl}?fl_attachment=0`;
   
-  // Images - open directly
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-    window.open(fileUrl, '_blank');
-    return;
-  }
-  
-  // Office files (DOCX, DOC, XLSX, PPTX) - use Google Docs Viewer
-  if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-    window.open(viewerUrl, '_blank');
-    return;
-  }
-  
-  // Fallback - open directly
-  window.open(fileUrl, '_blank');
+  // PDFs, images, and DOCX - all open inline
+  window.open(displayUrl, '_blank');
 };
 
   // ✅ Approve mutation
