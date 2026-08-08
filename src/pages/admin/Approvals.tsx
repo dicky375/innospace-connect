@@ -10,6 +10,7 @@ import api, { REGISTRATIONS } from "@/lib/api";
 const AdminApprovals = () => {
   const queryClient = useQueryClient();
 
+  // ✅ Fetch pending registrations
   const { data, isLoading } = useQuery({
     queryKey: ["pending-registrations"],
     queryFn: async () => {
@@ -20,65 +21,6 @@ const AdminApprovals = () => {
   });
 
   const pending = data?.registrations || [];
-
-  // ✅ File view handler
-  const handleViewFile = async (registrationId: string) => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      toast.error('Please login again');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `https://innospace.onrender.com/api/registrations/file/${registrationId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to open file');
-      }
-    } catch (err) {
-      toast.error('Failed to open file');
-    }
-  };
-
-  const approveMutation = useMutation({
-    mutationFn: async (id: string) =>
-      api.patch(`${REGISTRATIONS}/${id}/approve`),
-    onSuccess: () => {
-      toast.success("Registration approved! Commission assigned.");
-      queryClient.invalidateQueries({ queryKey: ["pending-registrations"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to approve registration");
-    },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason?: string }) =>
-      api.patch(`${REGISTRATIONS}/${id}/reject`, {
-        reason: reason || "Not approved",
-      }),
-    onSuccess: () => {
-      toast.success("Registration rejected");
-      queryClient.invalidateQueries({ queryKey: ["pending-registrations"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to reject registration");
-    },
-  });
 
   // ✅ Calculate commission based on program's commission rate
   const calculateCommission = (registration: any) => {
@@ -97,9 +39,81 @@ const AdminApprovals = () => {
     return { rate, amount, isSiwes: false };
   };
 
+  // ✅ File view handler - gets URL from registration then opens it
+  const handleViewFile = async (registrationId: string) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      toast.error('Please login again');
+      return;
+    }
+
+    try {
+      // First, get the registration to get the file URL
+      const response = await fetch(
+        `https://innospace.onrender.com/api/registrations/${registrationId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        toast.error('Failed to get file information');
+        return;
+      }
+
+      const data = await response.json();
+      const fileUrl = data.registration?.siwesFormPath;
+
+      if (!fileUrl) {
+        toast.error('No file attached to this registration');
+        return;
+      }
+
+      // ✅ Open the URL directly - no fetch needed!
+      window.open(fileUrl, '_blank');
+      
+    } catch (err) {
+      console.error('[ViewFile] Error:', err);
+      toast.error('Failed to open file');
+    }
+  };
+
+  // ✅ Approve mutation
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) =>
+      api.patch(`${REGISTRATIONS}/${id}/approve`),
+    onSuccess: () => {
+      toast.success("Registration approved! Commission assigned.");
+      queryClient.invalidateQueries({ queryKey: ["pending-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || "Failed to approve registration");
+    },
+  });
+
+  // ✅ Reject mutation
+  const rejectMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) =>
+      api.patch(`${REGISTRATIONS}/${id}/reject`, {
+        reason: reason || "Not approved",
+      }),
+    onSuccess: () => {
+      toast.success("Registration rejected");
+      queryClient.invalidateQueries({ queryKey: ["pending-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || "Failed to reject registration");
+    },
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold">Pending Approvals</h1>
@@ -112,6 +126,7 @@ const AdminApprovals = () => {
           </Badge>
         </div>
 
+        {/* Main Content */}
         <div className="glass p-6">
           {isLoading ? (
             <div className="flex justify-center py-12">
@@ -134,20 +149,23 @@ const AdminApprovals = () => {
                     key={r.id}
                     className="border border-border rounded-xl p-6 hover:border-primary/50 transition-all"
                   >
+                    {/* Registration Details Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+                      {/* Student Info */}
                       <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                           Student
                         </p>
                         <p className="font-semibold text-lg">{r.studentName}</p>
                         <p className="text-sm text-muted-foreground">
-                          {r.studentEmail}
+                          {r.studentEmail || 'No email provided'}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {r.studentPhone}
                         </p>
                       </div>
 
+                      {/* Academic Details */}
                       <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                           Academic Details
@@ -157,6 +175,7 @@ const AdminApprovals = () => {
                         <p className="text-sm text-muted-foreground">{r.course}</p>
                       </div>
 
+                      {/* Program Info */}
                       <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                           Program
@@ -165,7 +184,6 @@ const AdminApprovals = () => {
                         <p className="text-sm text-muted-foreground capitalize">
                           {r.Program?.type}
                         </p>
-                        {/* ✅ Show commission rate on program card */}
                         {!isSiwes && (
                           <p className="text-xs text-primary mt-1">
                             Commission Rate: {rate}%
@@ -173,6 +191,7 @@ const AdminApprovals = () => {
                         )}
                       </div>
 
+                      {/* Referred By */}
                       <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                           Referred By
@@ -191,10 +210,10 @@ const AdminApprovals = () => {
                         </p>
                       </div>
 
-                      {/* ✅ Dynamic Commission Display */}
+                      {/* Dynamic Commission Display */}
                       <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
-                          Commission ({rate}%)
+                          Commission {!isSiwes && `(${rate}%)`}
                         </p>
                         {isSiwes ? (
                           <p className="text-sm text-muted-foreground">SIWES - No commission</p>
@@ -205,21 +224,24 @@ const AdminApprovals = () => {
                         )}
                       </div>
 
+                      {/* HOD */}
                       <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                           HOD
                         </p>
-                        <p>{r.hodName}</p>
+                        <p>{r.hodName || 'Not provided'}</p>
                       </div>
 
+                      {/* Supervisor */}
                       <div>
                         <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">
                           Supervisor
                         </p>
-                        <p>{r.supervisorName}</p>
+                        <p>{r.supervisorName || 'Not provided'}</p>
                       </div>
                     </div>
 
+                    {/* File Upload Section */}
                     {r.siwesFormName && (
                       <div className="mt-4 pt-4 border-t border-border">
                         <button
@@ -229,9 +251,13 @@ const AdminApprovals = () => {
                           <FileText className="h-4 w-4" />
                           View Uploaded SIWES Form
                         </button>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({r.siwesFormName})
+                        </span>
                       </div>
                     )}
 
+                    {/* Action Buttons */}
                     <div className="flex gap-3 mt-6">
                       <Button
                         onClick={() => approveMutation.mutate(r.id)}
