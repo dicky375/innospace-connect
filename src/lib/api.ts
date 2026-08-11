@@ -3,7 +3,7 @@ import axios from "axios";
 
 // ── Service URL ────────────────────────────────────────────────
 // ✅ FIX: Hardcode production URL
-const API_URL = "https://innospace.onrender.com";
+const API_URL = "";
 
 // ── API Endpoints ──────────────────────────────────────────────
 export const AUTH = `${API_URL}/api/auth`;
