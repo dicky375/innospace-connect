@@ -4,7 +4,7 @@ import api, { STATS, PAYOUTS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Award, DollarSign, Clock, ArrowRight, Loader2, RefreshCw, TrendingUp } from "lucide-react";
+import { Users, Award, DollarSign, Clock, ArrowRight, Loader2, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -61,9 +61,6 @@ const AdminDashboard = () => {
 
   const isLoading = loadingStats || loadingPayouts;
 
-  console.log('[Dashboard] Stats:', stats);
-  console.log('[Dashboard] Pending:', stats?.stats?.registrations?.pending);
-
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -76,15 +73,18 @@ const AdminDashboard = () => {
 
   const formatCurrency = (num: number) => {
     if (num >= 1000000) return `₦${(num / 1000000).toFixed(2)}M`;
-    return `₦${num.toLocaleString()}`;
+    if (num >= 1000) return `₦${num.toLocaleString()}`;
+    return `₦${num}`;
   };
 
   const pendingCount = stats?.stats?.registrations?.pending || 0;
+  const totalRegistrations = stats?.stats?.registrations?.total || 0;
+  const activePrograms = stats?.stats?.programs?.active || 0;
   
   // ✅ Revenue breakdown
   const totalRevenue = parseFloat(stats?.stats?.revenue?.total || "0");
   const totalCommissions = parseFloat(stats?.stats?.revenue?.commissions || "0");
-  const adminRevenue = parseFloat(stats?.stats?.revenue?.adminRevenue || "0");
+  const platformRevenue = totalRevenue - totalCommissions;
 
   return (
     <DashboardLayout>
@@ -110,7 +110,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Registrations"
-            value={stats?.stats?.registrations?.total || 0}
+            value={totalRegistrations}
             icon={Users}
             variant="primary"
           />
@@ -120,45 +120,50 @@ const AdminDashboard = () => {
             icon={Clock}
           />
           <StatCard
+            title="Active Programs"
+            value={activePrograms}
+            icon={Award}
+          />
+          <StatCard
             title="Total Revenue"
             value={formatCurrency(totalRevenue)}
             icon={DollarSign}
             variant="accent"
           />
-          <StatCard
-            title="Active Programs"
-            value={stats?.stats?.programs?.active || 0}
-            icon={Award}
-          />
         </div>
 
         {/* ✅ Revenue Breakdown Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-green-500/20 bg-green-500/5">
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Total Revenue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-green-500">{formatCurrency(totalRevenue)}</p>
-              <p className="text-xs text-muted-foreground">From all paid registrations</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border-blue-500/20 bg-blue-500/5">
             <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Affiliate Commissions</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-500" />
+                Affiliate Commissions
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-blue-500">{formatCurrency(totalCommissions)}</p>
-              <p className="text-xs text-muted-foreground">Paid out to affiliates</p>
+              <p className="text-xs text-muted-foreground">
+                {totalRegistrations > 0 
+                  ? `${((totalCommissions / totalRevenue) * 100).toFixed(1)}% of revenue`
+                  : 'No commissions yet'}
+              </p>
             </CardContent>
           </Card>
-          <Card className="border-purple-500/20 bg-purple-500/5">
+          <Card className="border-green-500/20 bg-green-500/5">
             <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Admin Revenue</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-green-500" />
+                Platform Earnings
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-purple-500">{formatCurrency(adminRevenue)}</p>
-              <p className="text-xs text-muted-foreground">Platform earnings</p>
+              <p className="text-3xl font-bold text-green-500">{formatCurrency(platformRevenue)}</p>
+              <p className="text-xs text-muted-foreground">
+                {totalRegistrations > 0 
+                  ? `${((platformRevenue / totalRevenue) * 100).toFixed(1)}% of revenue`
+                  : 'No earnings yet'}
+              </p>
             </CardContent>
           </Card>
         </div>
