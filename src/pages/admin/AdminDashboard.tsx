@@ -4,7 +4,7 @@ import api, { STATS, PAYOUTS } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Award, DollarSign, Clock, ArrowRight, Loader2, RefreshCw } from "lucide-react";
+import { Users, Award, DollarSign, Clock, ArrowRight, Loader2, RefreshCw, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -80,6 +80,11 @@ const AdminDashboard = () => {
   };
 
   const pendingCount = stats?.stats?.registrations?.pending || 0;
+  
+  // ✅ Revenue breakdown
+  const totalRevenue = parseFloat(stats?.stats?.revenue?.total || "0");
+  const totalCommissions = parseFloat(stats?.stats?.revenue?.commissions || "0");
+  const adminRevenue = parseFloat(stats?.stats?.revenue?.adminRevenue || "0");
 
   return (
     <DashboardLayout>
@@ -116,7 +121,7 @@ const AdminDashboard = () => {
           />
           <StatCard
             title="Total Revenue"
-            value={formatCurrency(parseFloat(stats?.stats?.revenue?.total || "0"))}
+            value={formatCurrency(totalRevenue)}
             icon={DollarSign}
             variant="accent"
           />
@@ -125,6 +130,37 @@ const AdminDashboard = () => {
             value={stats?.stats?.programs?.active || 0}
             icon={Award}
           />
+        </div>
+
+        {/* ✅ Revenue Breakdown Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-green-500/20 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground">Total Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-500">{formatCurrency(totalRevenue)}</p>
+              <p className="text-xs text-muted-foreground">From all paid registrations</p>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-500/20 bg-blue-500/5">
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground">Affiliate Commissions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-500">{formatCurrency(totalCommissions)}</p>
+              <p className="text-xs text-muted-foreground">Paid out to affiliates</p>
+            </CardContent>
+          </Card>
+          <Card className="border-purple-500/20 bg-purple-500/5">
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground">Admin Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-purple-500">{formatCurrency(adminRevenue)}</p>
+              <p className="text-xs text-muted-foreground">Platform earnings</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions */}
