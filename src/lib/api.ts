@@ -1,8 +1,9 @@
+// src/lib/api.ts
 import axios from "axios";
 
 // ── Service URL ────────────────────────────────────────────────
-// ✅ UPDATED: Using monolith URL (single server on port 3000)
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// ✅ FIX: Hardcode production URL
+const API_URL = "https://innospace.onrender.com";
 
 // ── API Endpoints ──────────────────────────────────────────────
 export const AUTH = `${API_URL}/api/auth`;
