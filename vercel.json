@@ -2,7 +2,8 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "https://innospace.onrender.com/api/$1"
+
     }
   ]
 }
