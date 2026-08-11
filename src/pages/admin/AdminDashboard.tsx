@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import api, { STATS, PAYOUTS } from "@/lib/api";
+import api, { PAYOUTS } from "@/lib/api"; // ✅ Remove STATS import
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +13,11 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // ✅ Fix: Use the correct endpoint directly
   const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const { data } = await api.get(`${STATS}/admin`);
+      const { data } = await api.get(`/api/admin/stats`); // ✅ Changed from ${STATS}/admin
       console.log('[API] Stats response:', data);
       return data;
     },
