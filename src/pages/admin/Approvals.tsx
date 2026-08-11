@@ -39,24 +39,25 @@ const AdminApprovals = () => {
     return { rate, amount, isSiwes: false };
   };
 
-// src/pages/admin/Approvals.tsx
+  // ✅ Fixed: Handles PDF and DOCX files properly
+  const handleViewFile = (fileUrl: string, fileName: string) => {
+    if (!fileUrl) {
+      toast.error('No file available');
+      return;
+    }
 
-const handleViewFile = (fileUrl: string, fileName: string) => {
-  if (!fileUrl) {
-    toast.error('No file available');
-    return;
-  }
-
-  const extension = fileName?.toLowerCase().split('.').pop() || '';
-  
-  // ✅ For all files, add fl_attachment=0 to force inline display
-  const displayUrl = fileUrl.includes('?') 
-    ? `${fileUrl}&fl_attachment=0` 
-    : `${fileUrl}?fl_attachment=0`;
-  
-  // PDFs, images, and DOCX - all open inline
-  window.open(displayUrl, '_blank');
-};
+    const extension = fileName?.toLowerCase().split('.').pop() || '';
+    
+    // For DOCX/DOC files - use Google Docs Viewer
+    if (['docx', 'doc'].includes(extension)) {
+      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+      window.open(viewerUrl, '_blank');
+      return;
+    }
+    
+    // For PDFs and images - open directly
+    window.open(fileUrl, '_blank');
+  };
 
   // ✅ Approve mutation
   const approveMutation = useMutation({
@@ -219,11 +220,11 @@ const handleViewFile = (fileUrl: string, fileName: string) => {
                       </div>
                     </div>
 
-                    {/* ✅ File Upload Section - Updated */}
+                    {/* ✅ File Upload Section - Fixed */}
                     {r.siwesFormName && (
                       <div className="mt-4 pt-4 border-t border-border">
                         <button
-                          onClick={() => handleViewFile(r.siwesFormPath)}
+                          onClick={() => handleViewFile(r.siwesFormPath, r.siwesFormName)}
                           className="inline-flex items-center gap-2 text-primary hover:underline"
                         >
                           <FileText className="h-4 w-4" />
